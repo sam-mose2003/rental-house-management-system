@@ -1,14 +1,14 @@
 body{
 font-family: Arial, sans-serif;
 margin:0;
-background:#f4f6f9;
+background:#5481c5;
 }
 
 /* Sidebar */
 .sidebar{
 width:220px;
 height:100vh;
-background:#2c3e50;
+background:#037805;
 position:fixed;
 color:white;
 padding-top:20px;
@@ -68,7 +68,7 @@ transition:0.3s;
 table{
 width:100%;
 border-collapse:collapse;
-background:white;
+background:rgb(98, 102, 225)
 }
 
 table th, table td{
