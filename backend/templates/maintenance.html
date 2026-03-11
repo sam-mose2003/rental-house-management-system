@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maintenance Requests</title>
+  <style>
+    body { font-family: Arial; margin:0; background:#f4f4f9; }
+    header { background:#4b7bec; color:white; padding:20px; text-align:center; }
+    .container { max-width:900px; margin:20px auto; padding:20px; background:white; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+    table { width:100%; border-collapse:collapse; margin-top:15px; }
+    th, td { padding:12px; text-align:left; border-bottom:1px solid #ddd; }
+    th { background:#2d98da; color:white; }
+    form { display:flex; flex-wrap:wrap; gap:15px; margin-top:15px; }
+    input, select, textarea, button { padding:10px; border-radius:5px; border:1px solid #ccc; flex:1 1 200px; }
+    textarea { flex:1 1 100%; }
+    button { background:#4b7bec; color:white; border:none; cursor:pointer; transition:0.3s; }
+    button:hover { background:#1e3799; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Maintenance Requests</h1>
+</header>
+
+<div class="container">
+  <form>
+    <input type="text" placeholder="Tenant Name" required>
+    <input type="text" placeholder="House Name" required>
+    <textarea placeholder="Describe Issue" rows="3" required></textarea>
+    <select>
+      <option value="pending">Pending</option>
+      <option value="in-progress">In Progress</option>
+      <option value="completed">Completed</option>
+    </select>
+    <button type="submit">Submit Request</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Tenant</th>
+        <th>House</th>
+        <th>Issue</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Jane Smith</td>
+        <td>Lakeview Apartment</td>
+        <td>Leaky faucet</td>
+        <td>Pending</td>
+        <td>Update | Delete</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+</body>
+</html>

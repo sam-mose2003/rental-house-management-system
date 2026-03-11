@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Reports</title>
+  <style>
+    body { font-family: Arial; margin:0; background:#f4f4f9; }
+    header { background:#4b7bec; color:white; padding:20px; text-align:center; }
+    .container { max-width:900px; margin:20px auto; padding:20px; background:white; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+    select, button { padding:10px; border-radius:5px; border:1px solid #ccc; margin-right:10px; }
+    button { background:#4b7bec; color:white; border:none; cursor:pointer; transition:0.3s; }
+    button:hover { background:#1e3799; }
+    .chart-placeholder { height:300px; background:#e1e5ee; display:flex; justify-content:center; align-items:center; border-radius:8px; margin-top:15px; font-weight:bold; color:#333; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>View Reports</h1>
+</header>
+
+<div class="container">
+  <select>
+    <option value="rent">Rent Collection</option>
+    <option value="occupancy">Occupancy</option>
+    <option value="outstanding">Outstanding Rent</option>
+  </select>
+  <button>Generate Report</button>
+
+  <div class="chart-placeholder">Chart / Table Placeholder</div>
+</div>
+</body>
+</html>

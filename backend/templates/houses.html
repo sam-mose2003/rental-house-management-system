@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Houses</title>
+  <style>
+    body { font-family: Arial; margin:0; background:#f4f4f9; }
+    header { background:#4b7bec; color:white; padding:20px; text-align:center; }
+    .container { max-width:900px; margin:20px auto; padding:20px; background:white; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+    table { width:100%; border-collapse:collapse; margin-top:15px; }
+    th, td { padding:12px; text-align:left; border-bottom:1px solid #ddd; }
+    th { background:#2d98da; color:white; }
+    .status-available { color:green; font-weight:bold; }
+    .status-occupied { color:red; font-weight:bold; }
+    form { display:flex; flex-wrap:wrap; gap:15px; margin-top:15px; }
+    input, select, button { padding:10px; border-radius:5px; border:1px solid #ccc; flex:1 1 200px; }
+    button { background:#4b7bec; color:white; border:none; cursor:pointer; transition:0.3s; }
+    button:hover { background:#1e3799; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Manage Houses</h1>
+</header>
+
+<div class="container">
+  <form>
+    <input type="text" placeholder="House Name" required>
+    <input type="text" placeholder="Address" required>
+    <input type="number" placeholder="Rent Amount" required>
+    <select>
+      <option value="available">Available</option>
+      <option value="occupied">Occupied</option>
+    </select>
+    <button type="submit">Add House</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>House</th>
+        <th>Address</th>
+        <th>Rent</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Sunrise Villa</td>
+        <td>Nairobi</td>
+        <td>$500</td>
+        <td class="status-available">Available</td>
+        <td>Edit | Delete</td>
+      </tr>
+      <tr>
+        <td>Lakeview Apartment</td>
+        <td>Kisumu</td>
+        <td>$400</td>
+        <td class="status-occupied">Occupied</td>
+        <td>Edit | Delete</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+</body>
+</html>

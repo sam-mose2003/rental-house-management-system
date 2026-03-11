@@ -13,13 +13,11 @@ app.config['MYSQL_DB'] = 'rhms'
 mysql = MySQL(app)
 
 
-# ---------------- HOME ----------------
 @app.route('/')
 def home():
     return render_template("login.html")
 
 
-# ---------------- LOGIN ----------------
 @app.route('/login', methods=['POST'])
 def login():
 
@@ -33,7 +31,7 @@ def login():
     return "Invalid login credentials"
 
 
-# ---------------- DASHBOARD ----------------
+
 @app.route('/dashboard')
 def dashboard():
 
@@ -98,4 +96,30 @@ def logout():
 
 
 if __name__ == "__main__":
+    app.run(debug=True)
+    from flask import Flask, render_template
+
+app = Flask(__name__)
+
+# Route for Manage Houses
+@app.route('/houses')
+def houses():
+    return render_template('houses.html')
+
+# Route for Record Rent Payment
+@app.route('/payments')
+def payments():
+    return render_template('payments.html')
+
+# Route for View Reports
+@app.route('/reports')
+def reports():
+    return render_template('reports.html')
+
+# Route for Maintenance Requests
+@app.route('/maintenance')
+def maintenance():
+    return render_template('maintenance.html')
+
+if __name__ == '__main__':
     app.run(debug=True)

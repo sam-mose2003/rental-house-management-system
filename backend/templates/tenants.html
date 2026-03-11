@@ -1,10 +1,71 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>Tenants</title>
+
+<title>Tenants</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 </head>
+
 <body>
-    <h1>Tenants List</h1>
-    <!-- Add tenant listing or controls here -->
+
+<div class="sidebar">
+
+<h2>RHMS</h2>
+
+<a href="/dashboard"><i class="fa fa-home"></i> Dashboard</a>
+<a href="/add_tenant"><i class="fa fa-user-plus"></i> Add Tenant</a>
+<a href="/tenants"><i class="fa fa-users"></i> View Tenants</a>
+
+</div>
+
+<div class="main">
+
+<div class="header">
+<h2>Tenant List</h2>
+</div>
+
+<table>
+
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>National ID</th>
+<th>Phone</th>
+<th>Email</th>
+<th>House</th>
+<th>Move In</th>
+<th>Actions</th>
+</tr>
+
+{% for tenant in tenants %}
+
+<tr>
+<td>{{ tenant[0] }}</td>
+<td>{{ tenant[1] }}</td>
+<td>{{ tenant[2] }}</td>
+<td>{{ tenant[3] }}</td>
+<td>{{ tenant[4] }}</td>
+<td>{{ tenant[5] }}</td>
+<td>{{ tenant[6] }}</td>
+
+<td>
+
+<button>Edit</button>
+<button>Delete</button>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
+
 </body>
 </html>

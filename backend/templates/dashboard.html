@@ -2,21 +2,53 @@
 <html>
 <head>
 <title>RHMS Dashboard</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 </head>
 
 <body>
 
-<h1>Rental House Management System</h1>
+<div class="sidebar">
 
+<h2>RHMS</h2>
+
+<a href="/dashboard"><i class="fa fa-home"></i> Dashboard</a>
+<a href="/add_tenant"><i class="fa fa-user-plus"></i> Add Tenant</a>
+<a href="/tenants"><i class="fa fa-users"></i> View Tenants</a>
+<a href="#"><i class="fa fa-building"></i> Houses</a>
+<a href="#"><i class="fa fa-money-bill"></i> Payments</a>
+<a href="#"><i class="fa fa-tools"></i> Maintenance</a>
+
+</div>
+
+<div class="main">
+
+<div class="header">
 <h2>Admin Dashboard</h2>
+</div>
 
-<ul>
-<li><a href="/add_tenant">Register Tenant</a></li>
-<li><a href="#">Manage Houses</a></li>
-<li><a href="#">Record Rent Payment</a></li>
-<li><a href="#">View Reports</a></li>
-<li><a href="#">Maintenance Requests</a></li>
-</ul>
+<div class="cards">
+
+<div class="card">
+<h3>Total Tenants</h3>
+<p>Manage tenant records</p>
+</div>
+
+<div class="card">
+<h3>Houses</h3>
+<p>Manage rental houses</p>
+</div>
+
+<div class="card">
+<h3>Payments</h3>
+<p>Track rent payments</p>
+</div>
+
+</div>
+
+</div>
 
 </body>
 </html>
