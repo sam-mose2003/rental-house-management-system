@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Register Tenant</title>
+<style>
+body { font-family: Arial; background:#f4f4f4; padding:20px; }
+form { background:white; padding:20px; border-radius:8px; width:400px; margin:auto; }
+input, button { width:100%; padding:10px; margin:8px 0; border-radius:4px; }
+button { background:#007BFF; color:white; border:none; cursor:pointer; }
+button:hover { background:#0056b3; }
+</style>
+</head>
+<body>
+
+<h2 style="text-align:center;">Register Tenant</h2>
+
+<form method="POST" action="/add_tenant">
+<label>Name</label>
+<input type="text" name="name" required>
+
+<label>National ID</label>
+<input type="text" name="national_id" required>
+
+<label>Phone</label>
+<input type="text" name="phone" required>
+
+<label>Email</label>
+<input type="email" name="email" required>
+
+<label>House Number</label>
+<input type="text" name="house_number" required>
+
+<label>Move In Date</label>
+<input type="date" name="move_in_date" required>
+
+<button type="submit">Add Tenant</button>
+</form>
+
+</body>
+</html>
