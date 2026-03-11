@@ -14,12 +14,14 @@
 
 <h2>RHMS</h2>
 
-<a href="/dashboard"><i class="fa fa-home"></i> Dashboard</a>
-<a href="/add_tenant"><i class="fa fa-user-plus"></i> Add Tenant</a>
-<a href="/tenants"><i class="fa fa-users"></i> View Tenants</a>
-<a href="#"><i class="fa fa-building"></i> Houses</a>
-<a href="#"><i class="fa fa-money-bill"></i> Payments</a>
-<a href="#"><i class="fa fa-tools"></i> Maintenance</a>
+<a href="{{ url_for('dashboard') }}"><i class="fa fa-home"></i> Dashboard</a>
+<a href="{{ url_for('add_tenant') }}"><i class="fa fa-user-plus"></i> Add Tenant</a>
+<a href="{{ url_for('tenants') }}"><i class="fa fa-users"></i> View Tenants</a>
+<a href="{{ url_for('houses') }}"><i class="fa fa-building"></i> Houses</a>
+<a href="{{ url_for('payments') }}"><i class="fa fa-money-bill"></i> Payments</a>
+<a href="{{ url_for('reports') }}"><i class="fa fa-chart-bar"></i> Reports</a>
+<a href="{{ url_for('maintenance') }}"><i class="fa fa-tools"></i> Maintenance</a>
+<a href="{{ url_for('logout') }}" style="margin-top:20px;border-top:1px solid #444;"><i class="fa fa-sign-out-alt"></i> Logout</a>
 
 </div>
 

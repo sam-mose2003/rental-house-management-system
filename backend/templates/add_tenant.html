@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Register Tenant</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+
+body {
+font-family: Arial;
+background:#f4f4f4;
+padding:20px;
+}
+
+form {
+background:white;
+padding:20px;
+border-radius:8px;
+width:400px;
+margin:auto;
+}
+
+input, select, button {
+width:100%;
+padding:10px;
+margin:8px 0;
+border-radius:4px;
+border:1px solid #ccc;
+}
+
+button {
+background:#007BFF;
+color:white;
+border:none;
+cursor:pointer;
+}
+
+button:hover {
+background:#0056b3;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+  <h2>RHMS</h2>
+  <a href="{{ url_for('dashboard') }}"><i class="fa fa-home"></i> Dashboard</a>
+  <a href="{{ url_for('add_tenant') }}"><i class="fa fa-user-plus"></i> Add Tenant</a>
+  <a href="{{ url_for('tenants') }}"><i class="fa fa-users"></i> View Tenants</a>
+  <a href="{{ url_for('houses') }}"><i class="fa fa-building"></i> Houses</a>
+  <a href="{{ url_for('payments') }}"><i class="fa fa-money-bill"></i> Payments</a>
+  <a href="{{ url_for('reports') }}"><i class="fa fa-chart-bar"></i> Reports</a>
+  <a href="{{ url_for('maintenance') }}"><i class="fa fa-tools"></i> Maintenance</a>
+  <a href="{{ url_for('logout') }}" style="margin-top:20px;border-top:1px solid #444;"><i class="fa fa-sign-out-alt"></i> Logout</a>
+</div>
+
+<div class="main">
+<h2>Register Tenant</h2>
+{% if error %}<p style="color:red;">{{ error }}</p>{% endif %}
+
+<form method="POST" action="{{ url_for('add_tenant') }}">
+
+<label>Name</label>
+<input type="text" name="name" required>
+
+<label>National ID</label>
+<input type="text" name="national_id" required>
+
+<label>Phone</label>
+<input type="text" name="phone" required>
+
+<label>Email</label>
+<input type="email" name="email" required>
+
+<label>House Number</label>
+
+<select name="house_number" required>
+
+{% for house in houses %}
+
+<option value="{{ house[0] }}">
+{{ house[0] }}
+</option>
+
+{% endfor %}
+
+</select>
+
+<label>Move In Date</label>
+<input type="date" name="move_in_date" required>
+
+<button type="submit">Add Tenant</button>
+
+</form>
+</div>
+
+</body>
+</html>

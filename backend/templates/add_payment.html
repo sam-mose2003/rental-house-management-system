@@ -1,17 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>View Reports</title>
+  <title>Add Payment</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <style>
-    .report-box { max-width:900px; }
-    select, button { padding:10px; border-radius:5px; border:1px solid #ccc; margin-right:10px; }
-    button { background:#2c3e50; color:white; border:none; cursor:pointer; }
-    .chart-placeholder { height:300px; background:#e1e5ee; display:flex; justify-content:center; align-items:center; border-radius:8px; margin-top:15px; font-weight:bold; color:#333; }
-  </style>
+  <style> form { max-width:400px; background:white; padding:20px; border-radius:8px; } input, select, button { width:100%; padding:10px; margin:8px 0; } </style>
 </head>
 <body>
 
@@ -28,16 +21,32 @@
 </div>
 
 <div class="main">
-  <div class="header"><h2>View Reports</h2></div>
-  <div class="report-box">
-    <select>
-      <option value="rent">Rent Collection</option>
-      <option value="occupancy">Occupancy</option>
-      <option value="outstanding">Outstanding Rent</option>
-    </select>
-    <button type="button">Generate Report</button>
-    <div class="chart-placeholder">Chart / Table Placeholder</div>
-  </div>
+  <h2>Record Rent Payment</h2>
+  <form method="POST" action="{{ url_for('add_payment') }}">
+
+<label>Tenant</label>
+<select name="tenant_id" required>
+  <option value="">-- Select Tenant --</option>
+  {% for tenant in tenants or [] %}
+  <option value="{{ tenant[0] }}">{{ tenant[1] }}</option>
+  {% endfor %}
+</select>
+
+<label>Amount</label>
+<input type="number" name="amount" required>
+
+<label>Payment Date</label>
+<input type="date" name="payment_date" required>
+
+<label>Payment Method</label>
+<select name="payment_method">
+  <option value="Cash">Cash</option>
+  <option value="Bank Transfer">Bank Transfer</option>
+  <option value="Mobile Money">Mobile Money</option>
+</select>
+
+<button type="submit">Record Payment</button>
+</form>
 </div>
 
 </body>

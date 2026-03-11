@@ -4,58 +4,58 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Maintenance Requests</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
-    body { font-family: Arial; margin:0; background:#f4f4f9; }
-    header { background:#4b7bec; color:white; padding:20px; text-align:center; }
-    .container { max-width:900px; margin:20px auto; padding:20px; background:white; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+    .maint-box { max-width:900px; }
     table { width:100%; border-collapse:collapse; margin-top:15px; }
     th, td { padding:12px; text-align:left; border-bottom:1px solid #ddd; }
-    th { background:#2d98da; color:white; }
-    form { display:flex; flex-wrap:wrap; gap:15px; margin-top:15px; }
-    input, select, textarea, button { padding:10px; border-radius:5px; border:1px solid #ccc; flex:1 1 200px; }
-    textarea { flex:1 1 100%; }
-    button { background:#4b7bec; color:white; border:none; cursor:pointer; transition:0.3s; }
-    button:hover { background:#1e3799; }
+    form { display:flex; flex-wrap:wrap; gap:15px; margin-bottom:20px; }
+    input, select, textarea, button { padding:10px; border-radius:5px; border:1px solid #ccc; }
+    textarea { flex:1 1 100%; min-width:200px; }
+    form button { background:#2c3e50; color:white; border:none; cursor:pointer; }
   </style>
 </head>
 <body>
-<header>
-  <h1>Maintenance Requests</h1>
-</header>
 
-<div class="container">
-  <form>
-    <input type="text" placeholder="Tenant Name" required>
-    <input type="text" placeholder="House Name" required>
-    <textarea placeholder="Describe Issue" rows="3" required></textarea>
-    <select>
-      <option value="pending">Pending</option>
-      <option value="in-progress">In Progress</option>
-      <option value="completed">Completed</option>
-    </select>
-    <button type="submit">Submit Request</button>
-  </form>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Tenant</th>
-        <th>House</th>
-        <th>Issue</th>
-        <th>Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Jane Smith</td>
-        <td>Lakeview Apartment</td>
-        <td>Leaky faucet</td>
-        <td>Pending</td>
-        <td>Update | Delete</td>
-      </tr>
-    </tbody>
-  </table>
+<div class="sidebar">
+  <h2>RHMS</h2>
+  <a href="{{ url_for('dashboard') }}"><i class="fa fa-home"></i> Dashboard</a>
+  <a href="{{ url_for('add_tenant') }}"><i class="fa fa-user-plus"></i> Add Tenant</a>
+  <a href="{{ url_for('tenants') }}"><i class="fa fa-users"></i> View Tenants</a>
+  <a href="{{ url_for('houses') }}"><i class="fa fa-building"></i> Houses</a>
+  <a href="{{ url_for('payments') }}"><i class="fa fa-money-bill"></i> Payments</a>
+  <a href="{{ url_for('reports') }}"><i class="fa fa-chart-bar"></i> Reports</a>
+  <a href="{{ url_for('maintenance') }}"><i class="fa fa-tools"></i> Maintenance</a>
+  <a href="{{ url_for('logout') }}" style="margin-top:20px;border-top:1px solid #444;"><i class="fa fa-sign-out-alt"></i> Logout</a>
 </div>
+
+<div class="main">
+  <div class="header"><h2>Maintenance Requests</h2></div>
+  <div class="maint-box">
+    <p>Submit and view maintenance requests. (Submit form can be wired to a backend route when the <code>maintenance</code> table exists.)</p>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Tenant / House</th>
+          <th>Issue</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in maintenance_list or [] %}
+        <tr>
+          <td>{{ m[0] }}</td>
+          <td>{{ m[1] if m|length > 1 else '-' }} / {{ m[2] if m|length > 2 else '-' }}</td>
+          <td>{{ m[3] if m|length > 3 else '-' }}</td>
+          <td>{{ m[4] if m|length > 4 else '-' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 </body>
 </html>
