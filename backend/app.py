@@ -318,14 +318,13 @@ def api_create_tenant():
             cur.close()
             return jsonify({"error": "Selected house is not vacant"}), 400
 
-        # Insert tenant
+        # Insert tenant with pending status
         cur.execute(
-            "INSERT INTO tenants(name,national_id,phone,email,house_number,move_in_date) "
-            "VALUES(%s,%s,%s,%s,%s,%s)",
-            (name, national_id, phone, email, house_number, move_in_date),
+            "INSERT INTO tenants(name,national_id,phone,email,house_number,move_in_date,status) "
+            "VALUES(%s,%s,%s,%s,%s,%s,%s)",
+            (name, national_id, phone, email, house_number, move_in_date, 'pending'),
         )
-        # Mark house occupied
-        cur.execute("UPDATE houses SET status='Occupied' WHERE house_number=%s", (house_number,))
+        # Don't mark house occupied until tenant is approved
         mysql.connection.commit()
 
         # Fetch created tenant
@@ -734,6 +733,171 @@ def api_resolve_maintenance(request_id):
         return jsonify({"success": True, "message": "Maintenance request resolved"})
     except Exception as e:
         return jsonify({"error": "Could not resolve maintenance request"}), 500
+
+
+# ===== TENANT DASHBOARD APIS =====
+
+@app.route('/api/tenant-payment', methods=['POST'])
+def api_tenant_payment():
+    """Allow tenant to submit payment"""
+    try:
+        data = request.get_json()
+        tenant_id = data.get('tenant_id')
+        amount = data.get('amount')
+        payment_method = data.get('payment_method', 'Cash')
+        payment_date = data.get('payment_date')
+        
+        if not all([tenant_id, amount, payment_date]):
+            return jsonify({"error": "Missing required fields"}), 400
+        
+        cur = get_cursor()
+        # Verify tenant exists and is approved
+        cur.execute("SELECT status FROM tenants WHERE id = %s", (tenant_id,))
+        tenant = cur.fetchone()
+        if not tenant:
+            cur.close()
+            return jsonify({"error": "Tenant not found"}), 404
+        if tenant[0] != 'approved':
+            cur.close()
+            return jsonify({"error": "Tenant account is not approved"}), 403
+        
+        # Insert payment
+        cur.execute("""
+            INSERT INTO payments (tenant_id, amount, payment_method, payment_date)
+            VALUES (%s, %s, %s, %s)
+        """, (tenant_id, amount, payment_method, payment_date))
+        mysql.connection.commit()
+        
+        # Get created payment
+        payment_id = cur.lastrowid
+        cur.execute("""
+            SELECT p.id, p.amount, p.payment_date, p.payment_method
+            FROM payments p
+            WHERE p.id = %s
+        """, (payment_id,))
+        row = cur.fetchone()
+        
+        payment = {
+            "id": row[0],
+            "amount": float(row[1]),
+            "payment_date": row[2].isoformat() if row[2] else None,
+            "payment_method": row[3]
+        }
+        
+        cur.close()
+        return jsonify(payment)
+    except Exception as e:
+        return jsonify({"error": "Could not submit payment"}), 500
+
+
+@app.route('/api/maintenance-request', methods=['POST'])
+def api_maintenance_request():
+    """Allow tenant to submit maintenance request"""
+    try:
+        data = request.get_json()
+        tenant_id = data.get('tenant_id')
+        tenant_name = data.get('tenant')
+        house_number = data.get('house_number')
+        issue = data.get('issue')
+        priority = data.get('priority', 'Normal')
+        
+        if not all([tenant_id, tenant_name, house_number, issue]):
+            return jsonify({"error": "Missing required fields"}), 400
+        
+        cur = get_cursor()
+        # Verify tenant exists and is approved
+        cur.execute("SELECT status FROM tenants WHERE id = %s", (tenant_id,))
+        tenant = cur.fetchone()
+        if not tenant:
+            cur.close()
+            return jsonify({"error": "Tenant not found"}), 404
+        if tenant[0] != 'approved':
+            cur.close()
+            return jsonify({"error": "Tenant account is not approved"}), 403
+        
+        # Insert maintenance request
+        cur.execute("""
+            INSERT INTO maintenance (tenant, house_number, issue, status)
+            VALUES (%s, %s, %s, %s)
+        """, (tenant_name, house_number, issue, 'Open'))
+        mysql.connection.commit()
+        
+        # Get created request
+        request_id = cur.lastrowid
+        cur.execute("""
+            SELECT id, tenant, house_number, issue, status, created_at
+            FROM maintenance
+            WHERE id = %s
+        """, (request_id,))
+        row = cur.fetchone()
+        
+        request_data = {
+            "id": row[0],
+            "tenant": row[1],
+            "house_number": row[2],
+            "issue": row[3],
+            "status": row[4],
+            "created_at": row[5].isoformat() if row[5] else None
+        }
+        
+        cur.close()
+        return jsonify(request_data)
+    except Exception as e:
+        return jsonify({"error": "Could not submit maintenance request"}), 500
+
+
+@app.route('/api/tenant-payments/<int:tenant_id>')
+def api_tenant_payments(tenant_id):
+    """Get payments for a specific tenant"""
+    try:
+        cur = get_cursor()
+        cur.execute("""
+            SELECT id, amount, payment_date, payment_method
+            FROM payments
+            WHERE tenant_id = %s
+            ORDER BY payment_date DESC, id DESC
+        """, (tenant_id,))
+        
+        payments = []
+        for row in cur.fetchall():
+            payments.append({
+                "id": row[0],
+                "amount": float(row[1]),
+                "payment_date": row[2].isoformat() if row[2] else None,
+                "payment_method": row[3]
+            })
+        cur.close()
+        return jsonify(payments)
+    except Exception as e:
+        return jsonify({"error": "Could not fetch tenant payments"}), 500
+
+
+@app.route('/api/tenant-maintenance/<int:tenant_id>')
+def api_tenant_maintenance(tenant_id):
+    """Get maintenance requests for a specific tenant"""
+    try:
+        cur = get_cursor()
+        cur.execute("""
+            SELECT id, tenant, house_number, issue, status, created_at
+            FROM maintenance
+            WHERE tenant = (SELECT name FROM tenants WHERE id = %s)
+            ORDER BY created_at DESC, id DESC
+        """, (tenant_id,))
+        
+        requests = []
+        for row in cur.fetchall():
+            requests.append({
+                "id": row[0],
+                "tenant": row[1],
+                "house_number": row[2],
+                "issue": row[3],
+                "status": row[4],
+                "created_at": row[5].isoformat() if row[5] else None
+            })
+        cur.close()
+        return jsonify(requests)
+    except Exception as e:
+        return jsonify({"error": "Could not fetch tenant maintenance requests"}), 500
 
 
 if __name__ == "__main__":

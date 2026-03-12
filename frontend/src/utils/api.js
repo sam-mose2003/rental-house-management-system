@@ -48,3 +48,24 @@ export const resolveMaintenanceRequest = (id) => apiRequest(`/resolve-maintenanc
 
 // House APIs
 export const getHouses = () => apiRequest('/houses');
+export const fetchVacantHouses = () => apiRequest('/houses?vacant=1');
+
+// Tenant Dashboard APIs
+export const registerTenant = (tenantData) => apiRequest('/tenants', {
+  method: 'POST',
+  body: JSON.stringify(tenantData),
+});
+
+export const makeTenantPayment = (paymentData) => apiRequest('/tenant-payment', {
+  method: 'POST',
+  body: JSON.stringify(paymentData),
+});
+
+export const submitMaintenanceRequest = (requestData) => apiRequest('/maintenance-request', {
+  method: 'POST',
+  body: JSON.stringify(requestData),
+});
+
+export const getTenantPayments = (tenantId) => apiRequest(`/tenant-payments/${tenantId}`);
+
+export const getTenantMaintenanceRequests = (tenantId) => apiRequest(`/tenant-maintenance/${tenantId}`);

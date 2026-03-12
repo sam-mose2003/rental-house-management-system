@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { fetchVacantHouses, registerTenant } from './utils/api';
+import TenantDashboard from './pages/TenantDashboard';
 import './App.css';
-import { fetchVacantHouses, registerTenant } from './api';
 
-function App() {
+function RegistrationForm() {
   const [houses, setHouses] = useState([]);
   const [loadingHouses, setLoadingHouses] = useState(true);
   const [form, setForm] = useState({
@@ -16,6 +18,7 @@ function App() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState(null);
   const [messageType, setMessageType] = useState('success');
+  const [registrationComplete, setRegistrationComplete] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -42,8 +45,9 @@ function App() {
     setSubmitting(true);
     try {
       await registerTenant(form);
-      setMessage('Registration successful! We will contact you shortly.');
+      setMessage('Registration successful! Your application is now pending approval.');
       setMessageType('success');
+      setRegistrationComplete(true);
       setForm({
         name: '',
         national_id: '',
@@ -52,8 +56,6 @@ function App() {
         house_number: '',
         move_in_date: '',
       });
-      const data = await fetchVacantHouses();
-      setHouses(data);
     } catch (err) {
       setMessage(err.message || 'Registration failed');
       setMessageType('error');
@@ -61,6 +63,33 @@ function App() {
       setSubmitting(false);
     }
   };
+
+  if (registrationComplete) {
+    return (
+      <div className="app">
+        <div className="card">
+          <h1>Registration Submitted! 🎉</h1>
+          <div className="success-message">
+            <p>Your tenant application has been submitted successfully and is now pending approval.</p>
+            <p>You will be able to access your dashboard once the administrator approves your application.</p>
+            <p><strong>Application Details:</strong></p>
+            <ul>
+              <li>Name: {form.name || 'N/A'}</li>
+              <li>Email: {form.email || 'N/A'}</li>
+              <li>Phone: {form.phone || 'N/A'}</li>
+              <li>House: {form.house_number || 'N/A'}</li>
+            </ul>
+          </div>
+          <button 
+            className="submit-btn" 
+            onClick={() => setRegistrationComplete(false)}
+          >
+            Submit Another Application
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
@@ -146,6 +175,20 @@ function App() {
         </form>
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <div className="app">
+        <Routes>
+          <Route path="/" element={<RegistrationForm />} />
+          <Route path="/dashboard" element={<TenantDashboard />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
