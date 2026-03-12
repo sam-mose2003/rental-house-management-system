@@ -1,56 +1,123 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>RHMS Dashboard</title>
-
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard – RHMS</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
-
 <body>
 
 <div class="sidebar">
-
-<h2>RHMS</h2>
-
-<a href="{{ url_for('dashboard') }}"><i class="fa fa-home"></i> Dashboard</a>
-<a href="{{ url_for('add_tenant') }}"><i class="fa fa-user-plus"></i> Add Tenant</a>
-<a href="{{ url_for('tenants') }}"><i class="fa fa-users"></i> View Tenants</a>
-<a href="{{ url_for('houses') }}"><i class="fa fa-building"></i> Houses</a>
-<a href="{{ url_for('payments') }}"><i class="fa fa-money-bill"></i> Payments</a>
-<a href="{{ url_for('reports') }}"><i class="fa fa-chart-bar"></i> Reports</a>
-<a href="{{ url_for('maintenance') }}"><i class="fa fa-tools"></i> Maintenance</a>
-<a href="{{ url_for('logout') }}" style="margin-top:20px;border-top:1px solid #444;"><i class="fa fa-sign-out-alt"></i> Logout</a>
-
+  <h2>RHMS</h2>
+  <a href="{{ url_for('dashboard') }}" class="active"><i class="fa fa-home"></i> Dashboard</a>
+  <a href="{{ url_for('add_tenant') }}"><i class="fa fa-user-plus"></i> Add Tenant</a>
+  <a href="{{ url_for('tenants') }}"><i class="fa fa-users"></i> View Tenants</a>
+  <a href="{{ url_for('houses') }}"><i class="fa fa-building"></i> Houses</a>
+  <a href="{{ url_for('payments') }}"><i class="fa fa-money-bill-wave"></i> Payments</a>
+  <a href="{{ url_for('reports') }}"><i class="fa fa-chart-line"></i> Reports</a>
+  <a href="{{ url_for('maintenance') }}"><i class="fa fa-wrench"></i> Maintenance</a>
+  <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fa fa-sign-out-alt"></i> Logout</a>
 </div>
 
 <div class="main">
+  <div class="topbar">
+    <span class="datetime" id="datetime"></span>
+  </div>
 
-<div class="header">
-<h2>Admin Dashboard</h2>
+  <div class="header">
+    <h2>Admin Dashboard</h2>
+  </div>
+
+  <div class="dashboard-content">
+    <div class="kpi-cards">
+      <div class="kpi-card">
+        <p class="kpi-title">Total Tenants</p>
+        <p class="kpi-value">{{ stats.total_tenants|default(0) }}</p>
+        <p class="kpi-meta">(+15%)</p>
+        <div class="kpi-icon"><i class="fa fa-users"></i></div>
+        <svg class="kpi-spark" viewBox="0 0 80 36" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#00b4d8" stroke-width="1.5" points="0,30 15,22 30,26 45,18 60,24 80,12"/>
+        </svg>
+      </div>
+      <div class="kpi-card">
+        <p class="kpi-title">Houses Managed</p>
+        <p class="kpi-value">{{ stats.total_houses|default(0) }}</p>
+        <p class="kpi-meta">{% if stats.total_houses and stats.total_houses > 0 %}({{ ((stats.occupied_houses|default(0) / stats.total_houses) * 100)|int }}% occupied){% else %}(—){% endif %}</p>
+        <div class="kpi-icon"><i class="fa fa-building"></i></div>
+        <svg class="kpi-spark" viewBox="0 0 80 36" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#00b4d8" stroke-width="1.5" points="0,28 20,20 40,24 60,16 80,20"/>
+        </svg>
+      </div>
+      <div class="kpi-card">
+        <p class="kpi-title">Payments Collected</p>
+        <p class="kpi-value">KES {{ "{:,.0f}".format(stats.payments_mtd|default(0)) }}</p>
+        <p class="kpi-meta">(Month-to-Date)</p>
+        <div class="kpi-icon"><i class="fa fa-coins"></i></div>
+        <svg class="kpi-spark" viewBox="0 0 80 36" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#00b4d8" stroke-width="1.5" points="0,24 12,20 28,26 44,14 60,18 80,10"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="dashboard-row">
+      <div class="chart-card">
+        <h3>Recent Activity and Revenue Trends</h3>
+        <p class="chart-subtitle">Monthly Rent Collections</p>
+        <div class="chart-bars">
+          <div class="chart-bar-wrap"><div class="chart-bar" style="height: 45%;"></div><span>Jan</span></div>
+          <div class="chart-bar-wrap"><div class="chart-bar" style="height: 62%;"></div><span>Feb</span></div>
+          <div class="chart-bar-wrap"><div class="chart-bar" style="height: 55%;"></div><span>Mar</span></div>
+          <div class="chart-bar-wrap"><div class="chart-bar" style="height: 70%;"></div><span>Apr</span></div>
+          <div class="chart-bar-wrap"><div class="chart-bar" style="height: 58%;"></div><span>May</span></div>
+          <div class="chart-bar-wrap"><div class="chart-bar" style="height: 75%;"></div><span>Jun</span></div>
+          <div class="chart-bar-wrap"><div class="chart-bar" style="height: 68%;"></div><span>Jul</span></div>
+          <div class="chart-bar-wrap"><div class="chart-bar" style="height: 82%;"></div><span>Aug</span></div>
+          <div class="chart-bar-wrap"><div class="chart-bar" style="height: 65%;"></div><span>Sep</span></div>
+          <div class="chart-bar-wrap"><div class="chart-bar" style="height: 78%;"></div><span>Oct</span></div>
+          <div class="chart-bar-wrap"><div class="chart-bar" style="height: 72%;"></div><span>Nov</span></div>
+          <div class="chart-bar-wrap"><div class="chart-bar" style="height: 60%;"></div><span>Dec</span></div>
+        </div>
+      </div>
+
+      <div class="transactions-card">
+        <h3>Recent Transactions</h3>
+        <div class="transactions-list">
+          {% for t in recent_transactions or [] %}
+          <div class="transaction-item">
+            <div class="transaction-avatar">{{ (t[0] or '?')[:1]|upper }}</div>
+            <div class="transaction-body">
+              <div class="transaction-desc">New Tenant {{ t[0] or '—' }}</div>
+              <div class="transaction-time">{{ t[1] or '—' }}</div>
+            </div>
+            <i class="fa fa-chevron-right transaction-arrow"></i>
+          </div>
+          {% endfor %}
+          {% if not recent_transactions %}
+          <div class="transaction-item">
+            <div class="transaction-avatar">—</div>
+            <div class="transaction-body">
+              <div class="transaction-desc">No recent activity</div>
+              <div class="transaction-time">Add tenants to see activity here</div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<div class="cards">
-
-<div class="card">
-<h3>Total Tenants</h3>
-<p>Manage tenant records</p>
-</div>
-
-<div class="card">
-<h3>Houses</h3>
-<p>Manage rental houses</p>
-</div>
-
-<div class="card">
-<h3>Payments</h3>
-<p>Track rent payments</p>
-</div>
-
-</div>
-
-</div>
+<script>
+  function updateDateTime() {
+    var d = new Date();
+    var opts = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+    document.getElementById('datetime').textContent = d.toLocaleDateString('en-US', opts);
+  }
+  updateDateTime();
+  setInterval(updateDateTime, 60000);
+</script>
 
 </body>
 </html>

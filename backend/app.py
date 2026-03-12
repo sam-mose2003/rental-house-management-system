@@ -36,7 +36,25 @@ def login():
 def dashboard():
     if not session.get('logged_in'):
         return redirect(url_for('home'))
-    return render_template("dashboard.html")
+    stats = {'total_tenants': 0, 'total_houses': 0, 'occupied_houses': 0, 'payments_mtd': 0, 'monthly_data': []}
+    recent_transactions = []
+    try:
+        cur = get_cursor()
+        cur.execute("SELECT COUNT(*) FROM tenants")
+        stats['total_tenants'] = cur.fetchone()[0] or 0
+        cur.execute("SELECT COUNT(*) FROM houses")
+        stats['total_houses'] = cur.fetchone()[0] or 0
+        cur.execute("SELECT COUNT(*) FROM houses WHERE status='Occupied'")
+        stats['occupied_houses'] = cur.fetchone()[0] or 0
+        cur.execute("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE MONTH(payment_date)=MONTH(CURRENT_DATE()) AND YEAR(payment_date)=YEAR(CURRENT_DATE())")
+        row = cur.fetchone()
+        stats['payments_mtd'] = float(row[0]) if row and row[0] else 0
+        cur.execute("SELECT name, move_in_date FROM tenants ORDER BY move_in_date DESC LIMIT 8")
+        recent_transactions = cur.fetchall()
+        cur.close()
+    except (MySQLdb.ProgrammingError, MySQLdb.OperationalError):
+        pass
+    return render_template("dashboard.html", stats=stats, recent_transactions=recent_transactions)
 
 
 @app.route('/add_tenant', methods=['GET', 'POST'])

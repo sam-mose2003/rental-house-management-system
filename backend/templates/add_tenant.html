@@ -1,104 +1,285 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-
-<title>Register Tenant</title>
-
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-<style>
-
-body {
-font-family: Arial;
-background:#f4f4f4;
-padding:20px;
-}
-
-form {
-background:white;
-padding:20px;
-border-radius:8px;
-width:400px;
-margin:auto;
-}
-
-input, select, button {
-width:100%;
-padding:10px;
-margin:8px 0;
-border-radius:4px;
-border:1px solid #ccc;
-}
-
-button {
-background:#007BFF;
-color:white;
-border:none;
-cursor:pointer;
-}
-
-button:hover {
-background:#0056b3;
-}
-
-</style>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tenant Registration – RHMS</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .add-tenant-page { display: flex; min-height: 100vh; }
+    .add-tenant-page .main { flex: 1; display: flex; margin-left: 0; padding: 0; }
+    .add-tenant-hero {
+      flex: 1;
+      background: linear-gradient(145deg, #1a2534 0%, #0f1620 100%);
+      padding: 48px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .add-tenant-hero .hero-visual {
+      position: relative;
+      max-width: 420px;
+      margin: 0 auto 40px;
+      min-height: 220px;
+    }
+    .hero-buildings {
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      justify-content: center;
+    }
+    .hero-building {
+      width: 60px;
+      height: 80px;
+      background: linear-gradient(180deg, #2d4a5e 0%, #1e3a4a 100%);
+      border-radius: 8px 8px 0 0;
+      position: relative;
+    }
+    .hero-building::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 20px;
+      background: #00b4d8;
+      border-radius: 8px 8px 0 0;
+    }
+    .hero-building:nth-child(2) { height: 110px; }
+    .hero-building:nth-child(3) { height: 70px; }
+    .hero-building:nth-child(4) { height: 95px; }
+    .hero-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 24px;
+      max-width: 380px;
+      margin: 0 auto;
+    }
+    .hero-feature {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: rgba(0, 180, 216, 0.95);
+      letter-spacing: 0.04em;
+    }
+    .add-tenant-form-wrap {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      background: rgba(30, 40, 55, 0.92);
+      backdrop-filter: blur(16px);
+      padding: 40px 44px 48px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: -8px 0 32px rgba(0, 0, 0, 0.3);
+    }
+    .add-tenant-form-wrap h2 {
+      margin: 0 0 28px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.06em;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .add-tenant-form-wrap h2 i {
+      color: #00b4d8;
+      font-size: 1.4rem;
+    }
+    .add-tenant-form-wrap .form-error {
+      background: rgba(220, 53, 69, 0.2);
+      color: #f8a0a8;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      margin-bottom: 20px;
+      border: 1px solid rgba(220, 53, 69, 0.4);
+    }
+    .add-tenant-form-wrap label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #9ca3af;
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+    }
+    .add-tenant-form-wrap .input-row {
+      position: relative;
+      margin-bottom: 18px;
+    }
+    .add-tenant-form-wrap .input-row i.input-icon {
+      position: absolute;
+      left: 14px;
+      top: 38px;
+      color: #6b7280;
+      font-size: 1rem;
+      pointer-events: none;
+      transition: color 0.2s;
+    }
+    .add-tenant-form-wrap .input-row input:focus + i.input-icon,
+    .add-tenant-form-wrap .input-row input:focus ~ i.input-icon,
+    .add-tenant-form-wrap .input-row select:focus + i.input-icon,
+    .add-tenant-form-wrap .input-row.has-value i.input-icon { color: #00b4d8; }
+    .add-tenant-form-wrap .input-row input,
+    .add-tenant-form-wrap .input-row select {
+      width: 100%;
+      padding: 12px 14px 12px 44px;
+      font-size: 0.95rem;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    .add-tenant-form-wrap .input-row input::placeholder {
+      color: #6b7280;
+    }
+    .add-tenant-form-wrap .input-row input:focus,
+    .add-tenant-form-wrap .input-row select:focus {
+      border-color: #00b4d8;
+      box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.2);
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .add-tenant-form-wrap .input-row select {
+      appearance: none;
+      cursor: pointer;
+    }
+    .add-tenant-form-wrap .input-row.select-row i.input-icon { top: 38px; }
+    .add-tenant-form-wrap .input-row.date-row input { padding-right: 44px; }
+    .add-tenant-form-wrap .input-row .icon-right {
+      left: auto;
+      right: 14px;
+      top: 38px;
+    }
+    .add-tenant-form-wrap .btn-add {
+      width: 100%;
+      margin-top: 12px;
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(135deg, #b91c1c 0%, #dc2626 50%, #ef4444 100%);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(185, 28, 28, 0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .add-tenant-form-wrap .btn-add:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(185, 28, 28, 0.5);
+    }
+    .add-tenant-form-wrap .cancel-link {
+      display: block;
+      text-align: center;
+      margin-top: 16px;
+      font-size: 0.88rem;
+      color: #9ca3af;
+      text-decoration: underline;
+      transition: color 0.2s;
+    }
+    .add-tenant-form-wrap .cancel-link:hover { color: #d1d5db; }
+  </style>
 </head>
-
-<body>
+<body class="add-tenant-page">
 
 <div class="sidebar">
   <h2>RHMS</h2>
   <a href="{{ url_for('dashboard') }}"><i class="fa fa-home"></i> Dashboard</a>
-  <a href="{{ url_for('add_tenant') }}"><i class="fa fa-user-plus"></i> Add Tenant</a>
+  <a href="{{ url_for('add_tenant') }}" class="active"><i class="fa fa-user-plus"></i> Add Tenant</a>
   <a href="{{ url_for('tenants') }}"><i class="fa fa-users"></i> View Tenants</a>
   <a href="{{ url_for('houses') }}"><i class="fa fa-building"></i> Houses</a>
-  <a href="{{ url_for('payments') }}"><i class="fa fa-money-bill"></i> Payments</a>
-  <a href="{{ url_for('reports') }}"><i class="fa fa-chart-bar"></i> Reports</a>
-  <a href="{{ url_for('maintenance') }}"><i class="fa fa-tools"></i> Maintenance</a>
-  <a href="{{ url_for('logout') }}" style="margin-top:20px;border-top:1px solid #444;"><i class="fa fa-sign-out-alt"></i> Logout</a>
+  <a href="{{ url_for('payments') }}"><i class="fa fa-money-bill-wave"></i> Payments</a>
+  <a href="{{ url_for('reports') }}"><i class="fa fa-chart-line"></i> Reports</a>
+  <a href="{{ url_for('maintenance') }}"><i class="fa fa-wrench"></i> Maintenance</a>
+  <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fa fa-sign-out-alt"></i> Logout</a>
 </div>
 
 <div class="main">
-<h2>Register Tenant</h2>
-{% if error %}<p style="color:red;">{{ error }}</p>{% endif %}
+  <div class="add-tenant-hero">
+    <div class="hero-visual">
+      <div class="hero-buildings">
+        <div class="hero-building"></div>
+        <div class="hero-building"></div>
+        <div class="hero-building"></div>
+        <div class="hero-building"></div>
+      </div>
+    </div>
+    <div class="hero-features">
+      <span class="hero-feature">SECURE TENANCY</span>
+      <span class="hero-feature">FAST ONBOARDING</span>
+      <span class="hero-feature">COMPLETE PROFILE</span>
+      <span class="hero-feature">DIGITAL RECORDS</span>
+    </div>
+  </div>
 
-<form method="POST" action="{{ url_for('add_tenant') }}">
+  <div class="add-tenant-form-wrap">
+    <h2><i class="fa fa-building"></i> TENANT REGISTRATION PORTAL</h2>
+    {% if error %}<p class="form-error">{{ error }}</p>{% endif %}
 
-<label>Name</label>
-<input type="text" name="name" required>
+    <form method="POST" action="{{ url_for('add_tenant') }}" id="add-tenant-form">
+      <label>Name</label>
+      <div class="input-row">
+        <input type="text" name="name" placeholder="Full name" required autocomplete="name">
+        <i class="fa fa-user input-icon"></i>
+      </div>
 
-<label>National ID</label>
-<input type="text" name="national_id" required>
+      <label>National ID</label>
+      <div class="input-row">
+        <input type="text" name="national_id" placeholder="National ID number" required>
+        <i class="fa fa-id-card input-icon"></i>
+      </div>
 
-<label>Phone</label>
-<input type="text" name="phone" required>
+      <label>Phone</label>
+      <div class="input-row">
+        <input type="tel" name="phone" placeholder="Phone number" required>
+        <i class="fa fa-phone input-icon"></i>
+      </div>
 
-<label>Email</label>
-<input type="email" name="email" required>
+      <label>Email</label>
+      <div class="input-row">
+        <input type="email" name="email" placeholder="Email address" required>
+        <i class="fa fa-envelope input-icon"></i>
+      </div>
 
-<label>House Number</label>
+      <label>House Number</label>
+      <div class="input-row select-row">
+        <select name="house_number" required>
+          <option value="">Select house</option>
+          {% for house in houses or [] %}
+          <option value="{{ house[0] }}">{{ house[0] }}</option>
+          {% endfor %}
+        </select>
+        <i class="fa fa-house input-icon"></i>
+      </div>
 
-<select name="house_number" required>
+      <label>Move In Date</label>
+      <div class="input-row date-row">
+        <input type="date" name="move_in_date" required>
+        <i class="fa fa-calendar-days input-icon icon-right"></i>
+      </div>
 
-{% for house in houses %}
-
-<option value="{{ house[0] }}">
-{{ house[0] }}
-</option>
-
-{% endfor %}
-
-</select>
-
-<label>Move In Date</label>
-<input type="date" name="move_in_date" required>
-
-<button type="submit">Add Tenant</button>
-
-</form>
+      <button type="submit" class="btn-add">Add Tenant</button>
+    </form>
+    <a href="{{ url_for('tenants') }}" class="cancel-link">Cancel / Exit Registration</a>
+  </div>
 </div>
+
+<script>
+  document.querySelectorAll('.add-tenant-form-wrap input, .add-tenant-form-wrap select').forEach(function(el) {
+    function updateRow() {
+      var row = el.closest('.input-row');
+      var hasVal = el.value && el.value.length > 0;
+      row.classList.toggle('has-value', hasVal);
+    }
+    el.addEventListener('focus', function() { this.closest('.input-row').classList.add('has-value'); });
+    el.addEventListener('blur', updateRow);
+    el.addEventListener('change', updateRow);
+    updateRow();
+  });
+</script>
 
 </body>
 </html>
