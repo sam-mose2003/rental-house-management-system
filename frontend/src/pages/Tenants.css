@@ -1,0 +1,225 @@
+.tenants {
+  padding: 2rem;
+  margin-left: 250px;
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.tenants-header {
+  margin-bottom: 2rem;
+}
+
+.tenants-header h1 {
+  color: #2c3e50;
+  font-size: 2.5rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.tenants-header p {
+  color: #7f8c8d;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.tenant-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #7f8c8d;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  color: #2c3e50;
+  background: rgba(52, 152, 219, 0.1);
+}
+
+.tab-btn.active {
+  color: #3498db;
+  border-bottom-color: #3498db;
+  background: rgba(52, 152, 219, 0.1);
+}
+
+.tenant-content {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.tenant-content h2 {
+  color: #2c3e50;
+  margin: 0 0 1.5rem 0;
+  font-size: 1.5rem;
+}
+
+.tenant-table-container {
+  overflow-x: auto;
+}
+
+.tenant-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.tenant-table th {
+  background: #f8f9fa;
+  color: #2c3e50;
+  font-weight: 600;
+  text-align: left;
+  padding: 1rem;
+  border-bottom: 2px solid #e9ecef;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tenant-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e9ecef;
+  color: #2c3e50;
+}
+
+.tenant-table tr:hover {
+  background: #f8f9fa;
+}
+
+.tenant-name {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.house-number {
+  font-weight: 500;
+  color: #27ae60;
+  background: rgba(39, 174, 96, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.approve-btn {
+  background: #27ae60;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.approve-btn:hover {
+  background: #229954;
+  transform: translateY(-1px);
+}
+
+.reject-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.reject-btn:hover {
+  background: #c0392b;
+  transform: translateY(-1px);
+}
+
+.no-data {
+  text-align: center;
+  color: #7f8c8d;
+  font-style: italic;
+  padding: 2rem;
+}
+
+.tenants-loading,
+.tenants-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  color: #7f8c8d;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.tenants-error button {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background 0.3s ease;
+}
+
+.tenants-error button:hover {
+  background: #c0392b;
+}
+
+@media (max-width: 768px) {
+  .tenants {
+    margin-left: 0;
+    padding: 1rem;
+  }
+  
+  .tenant-tabs {
+    flex-direction: column;
+  }
+  
+  .tab-btn {
+    width: 100%;
+    text-align: left;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .tenant-table {
+    font-size: 0.9rem;
+  }
+  
+  .tenant-table th,
+  .tenant-table td {
+    padding: 0.5rem;
+  }
+}
