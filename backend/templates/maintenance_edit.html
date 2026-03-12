@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Maintenance Requests</title>
+  <title>Edit Maintenance Request</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     .maint-box { max-width:900px; }
-    table { width:100%; border-collapse:collapse; margin-top:15px; }
-    th, td { padding:12px; text-align:left; border-bottom:1px solid #ddd; }
     form { display:flex; flex-wrap:wrap; gap:15px; margin-bottom:20px; }
     input, select, textarea, button { padding:10px; border-radius:5px; border:1px solid #ccc; }
     textarea { flex:1 1 100%; min-width:200px; }
-    form button { background:#2c3e50; color:white; border:none; cursor:pointer; }
+    .btn { border:none; cursor:pointer; }
+    .btn-primary { background:#2c3e50; color:white; }
+    .btn-secondary { background:#64748b; color:white; text-decoration:none; display:inline-block; }
   </style>
 </head>
 <body>
@@ -31,10 +31,8 @@
 </div>
 
 <div class="main">
-  <div class="header"><h2>Maintenance Requests</h2></div>
+  <div class="header"><h2>Edit Maintenance Request #{{ m[0] }}</h2></div>
   <div class="maint-box">
-    <p>Submit and view maintenance requests.</p>
-
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         <div style="margin: 10px 0; display:flex; flex-direction:column; gap:10px;">
@@ -56,60 +54,37 @@
       </div>
     {% endif %}
 
-    <form method="POST" action="{{ url_for('maintenance') }}">
-      <input type="text" name="tenant" placeholder="Tenant (optional)" value="{{ request.form.get('tenant','') }}">
+    <form method="POST" action="{{ url_for('edit_maintenance', maintenance_id=m[0]) }}">
+      <input type="text" name="tenant" placeholder="Tenant (optional)" value="{{ request.form.get('tenant', m[1] or '') }}">
 
+      {% set current_house = request.form.get('house_number', m[2] if m|length > 2 else '') %}
       {% if houses and (houses|length) > 0 %}
         <select name="house_number" required>
-          <option value="" disabled {{ 'selected' if not request.form.get('house_number') else '' }}>Select house</option>
+          <option value="" disabled {{ 'selected' if not current_house else '' }}>Select house</option>
           {% for h in houses or [] %}
             {% set hn = h[1] if h|length >= 3 else h[0] %}
-            <option value="{{ hn }}" {{ 'selected' if request.form.get('house_number') == hn else '' }}>{{ hn }}</option>
+            <option value="{{ hn }}" {{ 'selected' if current_house == hn else '' }}>{{ hn }}</option>
           {% endfor %}
         </select>
       {% else %}
-        <input type="text" name="house_number" placeholder="House number" required value="{{ request.form.get('house_number','') }}">
+        <input type="text" name="house_number" placeholder="House number" required value="{{ current_house }}">
       {% endif %}
 
-      <textarea name="issue" placeholder="Describe the issue..." required>{{ request.form.get('issue','') }}</textarea>
+      <textarea name="issue" placeholder="Describe the issue..." required>{{ request.form.get('issue', m[3] if m|length > 3 else '') }}</textarea>
 
+      {% set current_status = request.form.get('status', m[4] if m|length > 4 else 'Open') %}
       <select name="status">
-        <option value="Open" {{ 'selected' if request.form.get('status','Open') == 'Open' else '' }}>Open</option>
-        <option value="In Progress" {{ 'selected' if request.form.get('status') == 'In Progress' else '' }}>In Progress</option>
-        <option value="Closed" {{ 'selected' if request.form.get('status') == 'Closed' else '' }}>Closed</option>
+        <option value="Open" {{ 'selected' if current_status == 'Open' else '' }}>Open</option>
+        <option value="In Progress" {{ 'selected' if current_status == 'In Progress' else '' }}>In Progress</option>
+        <option value="Closed" {{ 'selected' if current_status == 'Closed' else '' }}>Closed</option>
       </select>
 
-      <button type="submit">Submit Request</button>
+      <button class="btn btn-primary" type="submit">Save Changes</button>
+      <a class="btn btn-secondary" href="{{ url_for('maintenance') }}">Cancel</a>
     </form>
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Tenant / House</th>
-          <th>Issue</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for m in maintenance_list or [] %}
-        <tr>
-          <td>{{ m[0] }}</td>
-          <td>{{ m[1] if m|length > 1 else '-' }} / {{ m[2] if m|length > 2 else '-' }}</td>
-          <td>{{ m[3] if m|length > 3 else '-' }}</td>
-          <td>{{ m[4] if m|length > 4 else '-' }}</td>
-          <td style="white-space:nowrap;">
-            <a href="{{ url_for('edit_maintenance', maintenance_id=m[0]) }}" style="margin-right:10px;">Edit</a>
-            <form method="POST" action="{{ url_for('delete_maintenance', maintenance_id=m[0]) }}" style="display:inline;" onsubmit="return confirm('Delete this maintenance request?');">
-              <button type="submit" style="background:#b91c1c; color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer;">Delete</button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
   </div>
 </div>
 
 </body>
 </html>
+

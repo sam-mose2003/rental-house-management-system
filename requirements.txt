@@ -1,4 +1,5 @@
-# add your project dependencies here
-# e.g.
-# flask==2.2.5
-# sqlalchemy>=2.0
+Flask>=3.0.0
+Flask-MySQLdb>=2.0.0
+# Provides the MySQLdb module used by Flask-MySQLdb
+mysqlclient>=2.2.0
+Flask-Cors>=4.0.0

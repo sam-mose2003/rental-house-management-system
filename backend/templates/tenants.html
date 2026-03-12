@@ -33,6 +33,21 @@
 <h2>Tenant List</h2>
 </div>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div style="margin: 10px 0; display:flex; flex-direction:column; gap:10px;">
+      {% for category, message in messages %}
+        {% set bg = '#dcfce7' if category == 'success' else '#fee2e2' %}
+        {% set border = '#86efac' if category == 'success' else '#fca5a5' %}
+        {% set color = '#166534' if category == 'success' else '#991b1b' %}
+        <div style="padding: 10px; border: 1px solid {{ border }}; background: {{ bg }}; color: {{ color }}; border-radius: 8px;">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
 <table>
 
 <tr>
@@ -59,8 +74,10 @@
 
 <td>
 
-<button>Edit</button>
-<button>Delete</button>
+<a href="{{ url_for('edit_tenant', tenant_id=tenant[0]) }}" style="margin-right:10px;">Edit</a>
+<form method="POST" action="{{ url_for('delete_tenant', tenant_id=tenant[0]) }}" style="display:inline;" onsubmit="return confirm('Delete this tenant?');">
+  <button type="submit" style="background:#b91c1c; color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer;">Delete</button>
+</form>
 
 </td>
 

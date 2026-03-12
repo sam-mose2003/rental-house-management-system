@@ -88,8 +88,12 @@
           <div class="transaction-item">
             <div class="transaction-avatar">{{ (t[0] or '?')[:1]|upper }}</div>
             <div class="transaction-body">
-              <div class="transaction-desc">New Tenant {{ t[0] or '—' }}</div>
-              <div class="transaction-time">{{ t[1] or '—' }}</div>
+              <div class="transaction-desc">
+                Payment from {{ t[0] or '—' }} — KES {{ "{:,.0f}".format(t[1] or 0) }}
+              </div>
+              <div class="transaction-time">
+                {{ t[2] or '—' }}{% if t[3] %} • {{ t[3] }}{% endif %}
+              </div>
             </div>
             <i class="fa fa-chevron-right transaction-arrow"></i>
           </div>
@@ -99,7 +103,7 @@
             <div class="transaction-avatar">—</div>
             <div class="transaction-body">
               <div class="transaction-desc">No recent activity</div>
-              <div class="transaction-time">Add tenants to see activity here</div>
+              <div class="transaction-time">Add payments to see them here</div>
             </div>
           </div>
           {% endif %}
