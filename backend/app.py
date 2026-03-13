@@ -533,7 +533,7 @@ def api_tenant_login():
         """, (email,))
         tenant = cur.fetchone()
         
-        if tenant and tenant[3] == password:  # Check password against national_id
+        if tenant and tenant[2] == password:  # Check password against national_id (tenant[2])
             # Generate simple token
             import hashlib
             token = hashlib.md5(f"{tenant[0]}{tenant[1]}{email}".encode()).hexdigest()
