@@ -252,7 +252,7 @@ def houses():
             SELECT t.id, t.name, t.house_number, t.national_id, t.phone, t.email, t.move_in_date
             FROM tenants t 
             WHERE t.status = 'pending'
-            ORDER BY t.created_at DESC
+            ORDER BY t.id DESC
         """)
         pending_requests = cur.fetchall()
     except MySQLdb.ProgrammingError:
