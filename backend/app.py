@@ -533,7 +533,12 @@ def api_tenant_login():
         """, (email,))
         tenant = cur.fetchone()
         
-        if tenant and tenant[2] == password:  # Check password against national_id (tenant[2])
+        print(f"Login attempt for email: {email}")
+        print(f"Password provided: {password}")
+        print(f"Tenant found: {tenant}")
+        
+        if tenant and (tenant[2] == password or str(tenant[2]) == password):  # Check password against national_id (tenant[2])
+            print(f"Login successful! National ID check: {tenant[2]} == {password}")
             # Generate simple token
             import hashlib
             token = hashlib.md5(f"{tenant[0]}{tenant[1]}{email}".encode()).hexdigest()
@@ -557,6 +562,11 @@ def api_tenant_login():
                 "tenant": tenant_data
             })
         else:
+            print(f"Login failed!")
+            if tenant:
+                print(f"Tenant found but password mismatch. Expected: {tenant[2]}, Got: {password}")
+            else:
+                print("No approved tenant found with this email")
             cur.close()
             return jsonify({"error": "Invalid email or password"}), 401
             
