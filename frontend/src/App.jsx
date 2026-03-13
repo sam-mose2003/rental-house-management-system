@@ -47,8 +47,23 @@ function RegistrationForm() {
     e.preventDefault();
     setMessage(null);
     setSubmitting(true);
+    
+    console.log('=== Tenant Registration Attempt ===');
+    console.log('Form data:', form);
+    console.log('Form validation:', {
+      name: !!form.name,
+      national_id: !!form.national_id,
+      phone: !!form.phone,
+      email: !!form.email,
+      house_number: !!form.house_number,
+      move_in_date: !!form.move_in_date
+    });
+    
     try {
-      await registerTenant(form);
+      console.log('Calling registerTenant API...');
+      const result = await registerTenant(form);
+      console.log('API response:', result);
+      
       setMessage('Registration successful! Your application is now pending approval.');
       setMessageType('success');
       setRegistrationComplete(true);
@@ -61,9 +76,16 @@ function RegistrationForm() {
         move_in_date: '',
       });
     } catch (err) {
+      console.error('Registration error:', err);
+      console.error('Error details:', {
+        message: err.message,
+        stack: err.stack,
+        name: err.name
+      });
       setMessage(err.message || 'Registration failed');
       setMessageType('error');
     } finally {
+      console.log('Registration attempt completed');
       setSubmitting(false);
     }
   };
