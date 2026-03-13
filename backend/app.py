@@ -14,7 +14,7 @@ app.config['MYSQL_DB'] = 'rhms'
 mysql = MySQL(app)
 
 # Allow React dev server to call /api/* endpoints
-CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]}})
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5176", "http://127.0.0.1:5176"]}})
 
 
 def get_cursor():
