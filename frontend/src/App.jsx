@@ -415,10 +415,7 @@ function TenantDashboard() {
         
         <div className="dashboard-content">
           {/* Application Status Card */}
-          <div className="status-card" style={{ 
-            background: `linear-gradient(135deg, ${getStatusColor(applicationStatus)}15, ${getStatusColor(applicationStatus)}05)`,
-            border: `2px solid ${getStatusColor(applicationStatus)}30`
-          }}>
+          <div className={`status-card status-${applicationStatus}`}>
             <div className="status-header">
               <h3>📋 Application Status</h3>
               <span className="status-badge" style={{ 
