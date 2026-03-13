@@ -497,6 +497,13 @@ def add_payment():
         tenants_list = cur.fetchall()
         print(f"Query result: {tenants_list}")
         cur.close()
+    except MySQLdb.ProgrammingError as e:
+        print(f"Database error: {e}")
+        tenants_list = []
+    except Exception as e:
+        print(f"General error: {e}")
+        tenants_list = []
+    
     if request.method == 'POST':
         tenant_id = request.form.get('tenant_id')
         amount = request.form.get('amount')
