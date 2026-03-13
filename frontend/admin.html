@@ -1,12 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RHMS Admin Dashboard</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main-admin.jsx"></script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting to Admin Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .redirect-container {
+            text-align: center;
+            background: white;
+            padding: 3rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 500px;
+        }
+        .redirect-container h1 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+        .redirect-container p {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+        .btn {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+        .old-dashboard {
+            background: #28a745;
+            color: white;
+        }
+        .new-dashboard {
+            background: #17a2b8;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="redirect-container">
+        <h1>Admin Dashboard Redirect</h1>
+        <p>Choose which admin dashboard to use:</p>
+        
+        <a href="http://localhost:5000/dashboard" class="btn old-dashboard">
+            🏛️ Use Classic Dashboard (Flask)
+        </a>
+        
+        <a href="http://localhost:5176" class="btn new-dashboard">
+            ⚡ Use Modern Dashboard (React)
+        </a>
+        
+        <p style="margin-top: 2rem; font-size: 0.9rem; color: #666;">
+            <strong>Note:</strong> The Classic Dashboard has all the same features but uses the traditional Flask interface.
+            The Modern Dashboard offers a more responsive React-based experience.
+        </p>
+    </div>
+</body>
 </html>
