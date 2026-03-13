@@ -735,6 +735,75 @@ def api_resolve_maintenance(request_id):
         return jsonify({"error": "Could not resolve maintenance request"}), 500
 
 
+# ===== HOUSE MANAGEMENT APIS =====
+
+@app.route('/api/houses', methods=['POST'])
+def api_add_house():
+    """Add a new house"""
+    try:
+        data = request.get_json()
+        house_number = data.get('house_number', '').strip()
+        status = data.get('status', 'Vacant')
+        
+        if not house_number:
+            return jsonify({"error": "House number is required"}), 400
+        
+        cur = get_cursor()
+        # Check if house already exists
+        cur.execute("SELECT id FROM houses WHERE house_number = %s", (house_number,))
+        if cur.fetchone():
+            cur.close()
+            return jsonify({"error": "House number already exists"}), 400
+        
+        # Insert new house
+        cur.execute(
+            "INSERT INTO houses (house_number, status) VALUES (%s, %s)",
+            (house_number, status)
+        )
+        mysql.connection.commit()
+        
+        # Get created house
+        house_id = cur.lastrowid
+        cur.execute("SELECT * FROM houses WHERE id = %s", (house_id,))
+        row = cur.fetchone()
+        cur.close()
+        
+        return jsonify(_row_to_house(row)), 201
+        
+    except Exception as e:
+        return jsonify({"error": "Could not add house"}), 500
+
+
+@app.route('/api/houses/<int:house_id>', methods=['DELETE'])
+def api_delete_house(house_id):
+    """Delete a house"""
+    try:
+        cur = get_cursor()
+        # Check if house exists
+        cur.execute("SELECT house_number FROM houses WHERE id = %s", (house_id,))
+        house = cur.fetchone()
+        if not house:
+            cur.close()
+            return jsonify({"error": "House not found"}), 404
+        
+        # Check if house is occupied by a tenant
+        cur.execute("SELECT id FROM tenants WHERE house_number = %s AND status = 'approved'", (house[0],))
+        tenant = cur.fetchone()
+        if tenant:
+            cur.close()
+            return jsonify({"error": "Cannot delete house that is occupied by a tenant"}), 400
+        
+        # Delete the house
+        cur.execute("DELETE FROM houses WHERE id = %s", (house_id,))
+        mysql.connection.commit()
+        cur.close()
+        
+        return jsonify({"success": True, "message": "House deleted successfully"})
+        
+    except Exception as e:
+        return jsonify({"error": "Could not delete house"}), 500
+
+
 # ===== TENANT DASHBOARD APIS =====
 
 @app.route('/api/tenant-payment', methods=['POST'])

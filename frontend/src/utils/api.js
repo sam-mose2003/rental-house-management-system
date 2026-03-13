@@ -2,6 +2,7 @@ const API_BASE_URL = 'http://localhost:5000/api';
 
 export const apiRequest = async (endpoint, options = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
+  console.log(`Making API request to: ${url}`);
   
   const config = {
     headers: {
@@ -13,13 +14,17 @@ export const apiRequest = async (endpoint, options = {}) => {
 
   try {
     const response = await fetch(url, config);
+    console.log(`Response status: ${response.status}`);
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      console.error(`API Error Response:`, errorData);
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log(`API Success:`, data);
+    return data;
   } catch (error) {
     console.error(`API Error (${endpoint}):`, error);
     throw error;
@@ -49,6 +54,13 @@ export const resolveMaintenanceRequest = (id) => apiRequest(`/resolve-maintenanc
 // House APIs
 export const getHouses = () => apiRequest('/houses');
 export const fetchVacantHouses = () => apiRequest('/houses?vacant=1');
+export const addHouse = (houseData) => apiRequest('/houses', {
+  method: 'POST',
+  body: JSON.stringify(houseData),
+});
+export const deleteHouse = (houseId) => apiRequest(`/houses/${houseId}`, {
+  method: 'DELETE',
+});
 
 // Tenant Dashboard APIs
 export const registerTenant = (tenantData) => apiRequest('/tenants', {

@@ -11,6 +11,7 @@ const Sidebar = () => {
     { path: '/tenants', label: 'Tenants', icon: '👥' },
     { path: '/payments', label: 'Payments', icon: '💰' },
     { path: '/maintenance', label: 'Maintenance', icon: '🔧' },
+    { path: '/houses', label: 'Houses', icon: '🏠' },
   ];
 
   const handleLogout = () => {

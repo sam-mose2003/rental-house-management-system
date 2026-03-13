@@ -22,13 +22,17 @@ function RegistrationForm() {
 
   useEffect(() => {
     (async () => {
+      console.log('useEffect: Starting to fetch vacant houses...');
       try {
         const data = await fetchVacantHouses();
+        console.log('useEffect: Successfully fetched houses:', data);
         setHouses(data);
       } catch (err) {
+        console.error('useEffect: Error fetching houses:', err);
         setMessage('Could not load houses. Please try again later.');
         setMessageType('error');
       } finally {
+        console.log('useEffect: Finished loading houses');
         setLoadingHouses(false);
       }
     })();

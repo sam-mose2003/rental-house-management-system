@@ -5,7 +5,8 @@ import Dashboard from './pages/Dashboard';
 import Tenants from './pages/Tenants';
 import Payments from './pages/Payments';
 import Maintenance from './pages/Maintenance';
-import './App.css';
+import Houses from './pages/Houses';
+import './AdminApp.css';
 
 function AdminApp() {
   return (
@@ -19,6 +20,7 @@ function AdminApp() {
             <Route path="/tenants" element={<Tenants />} />
             <Route path="/payments" element={<Payments />} />
             <Route path="/maintenance" element={<Maintenance />} />
+            <Route path="/houses" element={<Houses />} />
           </Routes>
         </div>
       </div>

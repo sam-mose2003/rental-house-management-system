@@ -1,0 +1,320 @@
+.houses {
+  padding: 2rem;
+  margin-left: 250px;
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.houses-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.houses-header h1 {
+  color: #2c3e50;
+  font-size: 2.5rem;
+  margin: 0;
+}
+
+.add-house-btn {
+  background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.add-house-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+}
+
+.error-message {
+  background: #e74c3c;
+  color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.add-house-form {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.add-house-form h3 {
+  color: #2c3e50;
+  margin: 0 0 1.5rem 0;
+  font-size: 1.5rem;
+}
+
+.add-house-form form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  color: #2c3e50;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group select {
+  padding: 0.75rem;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.submit-btn {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.submit-btn:hover {
+  background: #2980b9;
+}
+
+.cancel-btn {
+  background: #95a5a6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.cancel-btn:hover {
+  background: #7f8c8d;
+}
+
+.houses-table-container {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+  overflow-x: auto;
+}
+
+.houses-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.houses-table th {
+  background: #f8f9fa;
+  color: #2c3e50;
+  font-weight: 600;
+  text-align: left;
+  padding: 1rem;
+  border-bottom: 2px solid #e9ecef;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.houses-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e9ecef;
+  color: #2c3e50;
+}
+
+.houses-table tr:hover {
+  background: #f8f9fa;
+}
+
+.house-number {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.vacant {
+  background: rgba(39, 174, 96, 0.1);
+  color: #27ae60;
+}
+
+.status-badge.occupied {
+  background: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.delete-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.delete-btn:hover {
+  background: #c0392b;
+  transform: translateY(-1px);
+}
+
+.no-data {
+  text-align: center;
+  color: #7f8c8d;
+  font-style: italic;
+  padding: 2rem;
+}
+
+.houses-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.summary-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.summary-card h3 {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  margin: 0 0 0.5rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-number {
+  color: #2c3e50;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.houses-loading,
+.houses-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  color: #7f8c8d;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.houses-error button {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background 0.3s ease;
+}
+
+.houses-error button:hover {
+  background: #c0392b;
+}
+
+@media (max-width: 768px) {
+  .houses {
+    margin-left: 0;
+    padding: 1rem;
+  }
+  
+  .houses-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .add-house-form form {
+    grid-template-columns: 1fr;
+  }
+  
+  .houses-summary {
+    grid-template-columns: 1fr;
+  }
+  
+  .houses-table {
+    font-size: 0.9rem;
+  }
+  
+  .houses-table th,
+  .houses-table td {
+    padding: 0.5rem;
+  }
+}
