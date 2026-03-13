@@ -486,8 +486,9 @@ def add_payment():
         return redirect(url_for('home'))
     try:
         cur = get_cursor()
-        cur.execute("SELECT id, name, house_number FROM tenants WHERE status = 'approved'")
+        cur.execute("SELECT id, name, house_number FROM tenants WHERE status = 'approved' ORDER BY name")
         tenants_list = cur.fetchall()
+        print(f"Tenants for payment dropdown: {tenants_list}")
         cur.close()
     except MySQLdb.ProgrammingError:
         tenants_list = []
@@ -537,7 +538,7 @@ def api_tenant_login():
         print(f"Password provided: {password}")
         print(f"Tenant found: {tenant}")
         
-        if tenant and (tenant[2] == password or str(tenant[2]) == password):  # Check password against national_id (tenant[2])
+        if tenant and (str(tenant[2]) == str(password)):  # Convert both to string for comparison
             print(f"Login successful! National ID check: {tenant[2]} == {password}")
             # Generate simple token
             import hashlib
