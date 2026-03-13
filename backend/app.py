@@ -525,8 +525,8 @@ def add_payment():
             except Exception as e:
                 print(f"Error in add_payment: {e}")
         return redirect(url_for('payments'))
-    return render_template("payments.html", payments=get_payments(), tenants_list=tenants_list)
     print(f"Rendering payments.html with tenants_list: {tenants_list}")
+    return render_template("payments.html", payments=get_payments(), tenants_list=tenants_list)
 
 
 @app.route('/api/tenant-login', methods=['POST'])
