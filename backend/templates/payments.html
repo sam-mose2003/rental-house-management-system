@@ -2,44 +2,182 @@
 <html>
 
 <head>
-
-<title>Payments</title>
-
+<title>Payment Management</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
+<style>
+    .add-payment-btn {
+        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+    .add-payment-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+    }
+    .payment-form {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        display: none;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #333;
+    }
+    .form-group select,
+    .form-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    .submit-btn {
+        background: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .cancel-btn {
+        background: #6c757d;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .success-message {
+        background: #d4edda;
+        color: #155724;
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        border: 1px solid #c3e6cb;
+    }
+    .error-message {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        border: 1px solid #f5c6cb;
+    }
+</style>
 </head>
 
 <body>
 
-<h2 style="text-align:center;">Payment History</h2>
+<div style="width:80%;margin:auto;">
+    <h2 style="text-align:center;">Payment Management</h2>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="success-message">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <button class="add-payment-btn" onclick="togglePaymentForm()">
+        + Add Payment
+    </button>
+    
+    <div id="paymentForm" class="payment-form">
+        <h3>Add New Payment</h3>
+        <form method="POST" action="{{ url_for('add_payment') }}">
+            <div class="form-group">
+                <label for="tenant_id">Tenant</label>
+                <select name="tenant_id" id="tenant_id" required>
+                    <option value="">Select a tenant</option>
+                    {% for tenant in tenants_list %}
+                        <option value="{{ tenant[0] }}">{{ tenant[1] }} - {{ tenant[2] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="amount">Amount (KSH)</label>
+                <input type="number" name="amount" id="amount" placeholder="Enter amount in KSH" min="0" step="0.01" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="payment_method">Payment Method</label>
+                <select name="payment_method" id="payment_method">
+                    <option value="Cash">Cash</option>
+                    <option value="M-Pesa">M-Pesa</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Mobile Money">Mobile Money</option>
+                    <option value="Check">Check</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="payment_date">Payment Date</label>
+                <input type="date" name="payment_date" id="payment_date" required>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="submit-btn">Add Payment</button>
+                <button type="button" class="cancel-btn" onclick="togglePaymentForm()">Cancel</button>
+            </div>
+        </form>
+    </div>
+    
+    <h3>Payment History</h3>
+    <table border="1" style="width:100%;margin:auto;background:white;">
+        <tr>
+            <th>ID</th>
+            <th>Tenant</th>
+            <th>Amount (KSH)</th>
+            <th>Date</th>
+            <th>Method</th>
+        </tr>
+        
+        {% for payment in payments %}
+            <tr>
+                <td>{{ payment[0] }}</td>
+                <td>{{ payment[1] }}</td>
+                <td>{{ payment[2] }}</td>
+                <td>{{ payment[3] }}</td>
+                <td>{{ payment[4] }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
 
-<table border="1" style="width:80%;margin:auto;background:white;">
+<script>
+function togglePaymentForm() {
+    const form = document.getElementById('paymentForm');
+    if (form.style.display === 'none' || form.style.display === '') {
+        form.style.display = 'block';
+    } else {
+        form.style.display = 'none';
+    }
+}
 
-<tr>
-
-<th>ID</th>
-<th>Tenant</th>
-<th>Amount</th>
-<th>Date</th>
-<th>Method</th>
-
-</tr>
-
-{% for payment in payments %}
-
-<tr>
-
-<td>{{ payment[0] }}</td>
-<td>{{ payment[1] }}</td>
-<td>{{ payment[2] }}</td>
-<td>{{ payment[3] }}</td>
-<td>{{ payment[4] }}</td>
-
-</tr>
-
-{% endfor %}
-
-</table>
+// Set today's date as default
+document.getElementById('payment_date').valueAsDate = new Date();
+</script>
 
 </body>
 
