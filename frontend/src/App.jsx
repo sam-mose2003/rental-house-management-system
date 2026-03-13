@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { fetchVacantHouses, registerTenant } from './utils/api';
 import TenantDashboard from './pages/TenantDashboard';
+import TenantLogin from './pages/TenantLogin';
 import './App.css';
 
 function RegistrationForm() {
@@ -210,6 +211,7 @@ function App() {
       <div className="app">
         <Routes>
           <Route path="/" element={<RegistrationForm />} />
+          <Route path="/login" element={<TenantLogin />} />
           <Route path="/dashboard" element={<TenantDashboard />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -62,6 +62,10 @@ export const deleteHouse = (houseId) => apiRequest(`/houses/${houseId}`, {
   method: 'DELETE',
 });
 
+// Tenant-specific APIs
+export const getTenantPayments = (tenantId) => apiRequest(`/tenant-payments/${tenantId}`);
+export const getTenantMaintenanceRequests = (tenantId) => apiRequest(`/tenant-maintenance/${tenantId}`);
+
 // Tenant Dashboard APIs
 export const registerTenant = (tenantData) => apiRequest('/tenants', {
   method: 'POST',
@@ -72,12 +76,3 @@ export const makeTenantPayment = (paymentData) => apiRequest('/tenant-payment', 
   method: 'POST',
   body: JSON.stringify(paymentData),
 });
-
-export const submitMaintenanceRequest = (requestData) => apiRequest('/maintenance-request', {
-  method: 'POST',
-  body: JSON.stringify(requestData),
-});
-
-export const getTenantPayments = (tenantId) => apiRequest(`/tenant-payments/${tenantId}`);
-
-export const getTenantMaintenanceRequests = (tenantId) => apiRequest(`/tenant-maintenance/${tenantId}`);

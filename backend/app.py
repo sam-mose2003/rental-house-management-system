@@ -2,6 +2,7 @@ from flask import Flask, flash, jsonify, render_template, request, redirect, url
 from flask_mysqldb import MySQL
 from flask_cors import CORS
 import MySQLdb
+import hashlib
 
 app = Flask(__name__)
 app.secret_key = 'rhms_secret_key'
@@ -510,6 +511,119 @@ def add_payment():
                 flash('Failed to add payment. Please try again.', 'error')
             return redirect(url_for('payments'))
     return render_template("payments.html", payments=get_payments(), tenants_list=tenants_list)
+
+
+@app.route('/api/tenant-login', methods=['POST'])
+def api_tenant_login():
+    """Tenant login endpoint"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip()
+        password = data.get('password', '').strip()
+        
+        if not email or not password:
+            return jsonify({"error": "Email and password are required"}), 400
+        
+        cur = get_cursor()
+        # Find tenant by email and check against national_id (temporary password)
+        cur.execute("""
+            SELECT id, name, national_id, phone, email, house_number, status, move_in_date
+            FROM tenants 
+            WHERE email = %s AND status = 'approved'
+        """, (email,))
+        tenant = cur.fetchone()
+        
+        if tenant and tenant[3] == password:  # Check password against national_id
+            # Generate simple token
+            import hashlib
+            token = hashlib.md5(f"{tenant[0]}{tenant[1]}{email}".encode()).hexdigest()
+            
+            tenant_data = {
+                "id": tenant[0],
+                "name": tenant[1],
+                "national_id": tenant[2],
+                "phone": tenant[3],
+                "email": tenant[4],
+                "house_number": tenant[5],
+                "status": tenant[6],
+                "move_in_date": str(tenant[7]) if tenant[7] else None
+            }
+            
+            cur.close()
+            return jsonify({
+                "success": True,
+                "message": "Login successful",
+                "token": token,
+                "tenant": tenant_data
+            })
+        else:
+            cur.close()
+            return jsonify({"error": "Invalid email or password"}), 401
+            
+    except Exception as e:
+        return jsonify({"error": "Login failed"}), 500
+
+
+@app.route('/api/tenant-payments/<int:tenant_id>', methods=['GET'])
+def api_get_tenant_payments():
+    """Get payments for specific tenant"""
+    try:
+        cur = get_cursor()
+        cur.execute("""
+            SELECT id, amount, payment_date, payment_method 
+            FROM payments 
+            WHERE tenant_id = %s 
+            ORDER BY payment_date DESC
+        """, (tenant_id,))
+        payments = cur.fetchall()
+        cur.close()
+        return jsonify(payments)
+    except Exception as e:
+        return jsonify({"error": "Could not fetch payments"}), 500
+
+
+@app.route('/api/tenant-maintenance/<int:tenant_id>', methods=['GET'])
+def api_get_tenant_maintenance():
+    """Get maintenance requests for specific tenant"""
+    try:
+        cur = get_cursor()
+        cur.execute("""
+            SELECT id, issue, status, created_at 
+            FROM maintenance 
+            WHERE tenant = %s 
+            ORDER BY created_at DESC
+        """, (tenant_id,))
+        requests = cur.fetchall()
+        cur.close()
+        return jsonify(requests)
+    except Exception as e:
+        return jsonify({"error": "Could not fetch maintenance requests"}), 500
+
+
+@app.route('/api/tenant-payment', methods=['POST'])
+def api_make_tenant_payment():
+    """Make payment as tenant"""
+    try:
+        data = request.get_json()
+        tenant_id = data.get('tenant_id')
+        amount = data.get('amount')
+        payment_method = data.get('payment_method', 'Cash')
+        payment_date = data.get('payment_date')
+        
+        if not all([tenant_id, amount, payment_date]):
+            return jsonify({"error": "Missing required fields"}), 400
+        
+        cur = get_cursor()
+        cur.execute("""
+            INSERT INTO payments(tenant_id, amount, payment_date, payment_method) 
+            VALUES(%s, %s, %s, %s)
+        """, (tenant_id, amount, payment_date, payment_method))
+        mysql.connection.commit()
+        cur.close()
+        
+        return jsonify({"success": True, "message": "Payment recorded successfully"})
+    except Exception as e:
+        return jsonify({"error": "Could not process payment"}), 500
 
 
 @app.route('/reports', methods=['GET', 'POST'])

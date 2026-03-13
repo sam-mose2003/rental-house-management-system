@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .test-section { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .test-button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .result { margin-top: 15px; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .loading { background: #fff3cd; color: #856404; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Frontend Debug Test</h1>
+    
+    <div class="test-section">
+        <h3>1. Test API Connection</h3>
+        <button class="test-button" onclick="testAPI()">Test API Connection</button>
+        <div id="api-result" class="result">Click to test API connection...</div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Test Houses API</h3>
+        <button class="test-button" onclick="testHouses()">Test Houses API</button>
+        <div id="houses-result" class="result">Click to test houses API...</div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Test Tenant Registration</h3>
+        <button class="test-button" onclick="testTenantRegistration()">Test Tenant Registration</button>
+        <div id="tenant-result" class="result">Click to test tenant registration...</div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. Test React App Loading</h3>
+        <button class="test-button" onclick="testReactApp()">Test React App</button>
+        <div id="react-result" class="result">Click to test React app loading...</div>
+    </div>
+    
+    <div class="test-section">
+        <h3>5. Console Logs</h3>
+        <button class="test-button" onclick="clearLogs()">Clear Logs</button>
+        <pre id="console-logs">Console logs will appear here...</pre>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        let logCount = 0;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            const logsDiv = document.getElementById('console-logs');
+            logsDiv.textContent += logEntry + '\n';
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            console.log(logEntry);
+        }
+        
+        function updateResult(elementId, message, type = 'success') {
+            const element = document.getElementById(elementId);
+            element.className = `result ${type}`;
+            element.textContent = message;
+        }
+        
+        async function testAPI() {
+            log('Testing API connection...');
+            updateResult('api-result', 'Testing API connection...', 'loading');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/dashboard-stats`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log('API connection successful', 'success');
+                    updateResult('api-result', `✅ API Connected! Status: ${response.status}`, 'success');
+                } else {
+                    log(`API connection failed: ${response.status}`, 'error');
+                    updateResult('api-result', `❌ API Failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`API connection error: ${error.message}`, 'error');
+                updateResult('api-result', `❌ API Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testHouses() {
+            log('Testing houses API...');
+            updateResult('houses-result', 'Testing houses API...', 'loading');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/houses?vacant=1`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`Houses API successful: Found ${data.length} vacant houses`, 'success');
+                    updateResult('houses-result', `✅ Houses API Working! Found ${data.length} vacant houses`, 'success');
+                } else {
+                    log(`Houses API failed: ${response.status}`, 'error');
+                    updateResult('houses-result', `❌ Houses API Failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`Houses API error: ${error.message}`, 'error');
+                updateResult('houses-result', `❌ Houses API Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testTenantRegistration() {
+            log('Testing tenant registration...');
+            updateResult('tenant-result', 'Testing tenant registration...', 'loading');
+            
+            const testTenant = {
+                name: 'Test User',
+                national_id: '12345678',
+                phone: '0712345678',
+                email: 'test@example.com',
+                house_number: 'B3',
+                move_in_date: '2026-03-15'
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/tenants`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testTenant)
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log('Tenant registration successful', 'success');
+                    updateResult('tenant-result', '✅ Tenant Registration Working!', 'success');
+                } else {
+                    log(`Tenant registration failed: ${data.error}`, 'error');
+                    updateResult('tenant-result', `❌ Registration Failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                log(`Tenant registration error: ${error.message}`, 'error');
+                updateResult('tenant-result', `❌ Registration Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function testReactApp() {
+            log('Testing React app loading...');
+            updateResult('react-result', 'Testing React app...', 'loading');
+            
+            // Check if we can access the React app
+            fetch('http://localhost:5176')
+                .then(response => {
+                    if (response.ok) {
+                        log('React app accessible', 'success');
+                        updateResult('react-result', '✅ React App Working!', 'success');
+                    } else {
+                        log(`React app not accessible: ${response.status}`, 'error');
+                        updateResult('react-result', `❌ React App Failed: ${response.status}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    log(`React app error: ${error.message}`, 'error');
+                    updateResult('react-result', `❌ React App Error: ${error.message}`, 'error');
+                });
+        }
+        
+        function clearLogs() {
+            document.getElementById('console-logs').textContent = 'Console logs cleared...\n';
+            logCount = 0;
+        }
+        
+        // Auto-test on page load
+        window.onload = function() {
+            log('Frontend debug test page loaded');
+            log('Starting automatic tests...');
+            
+            setTimeout(() => {
+                testAPI();
+            }, 1000);
+            
+            setTimeout(() => {
+                testHouses();
+            }, 2000);
+            
+            setTimeout(() => {
+                testReactApp();
+            }, 3000);
+        };
+    </script>
+</body>
+</html>

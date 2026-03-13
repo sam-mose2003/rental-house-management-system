@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { makeTenantPayment, submitMaintenanceRequest, getTenantPayments, getTenantMaintenanceRequests } from '../utils/api';
 import './TenantDashboard.css';
 
@@ -9,14 +10,57 @@ const TenantDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [messageType, setMessageType] = useState('success');
+  const [tenantInfo, setTenantInfo] = useState(null);
+  const navigate = useNavigate();
 
-  // Mock tenant data - in real app, this would come from auth/session
-  const tenantInfo = {
-    id: 1,
-    name: 'John Doe',
-    house_number: 'A101',
-    email: 'john@example.com',
-    phone: '0712345678'
+  // Check authentication on component mount
+  useEffect(() => {
+    const storedTenant = localStorage.getItem('tenantInfo');
+    const storedToken = localStorage.getItem('tenantToken');
+    
+    if (!storedTenant || !storedToken) {
+      // Redirect to login if not authenticated
+      navigate('/login');
+      return;
+    }
+    
+    try {
+      const tenant = JSON.parse(storedTenant);
+      setTenantInfo(tenant);
+      console.log('Tenant authenticated:', tenant);
+      
+      // Load tenant's data
+      loadTenantData(tenant.id);
+    } catch (error) {
+      console.error('Error parsing tenant data:', error);
+      navigate('/login');
+    }
+  }, [navigate]);
+
+  const loadTenantData = async (tenantId) => {
+    try {
+      setLoading(true);
+      
+      // Load tenant payments
+      const paymentsData = await getTenantPayments(tenantId);
+      setPayments(paymentsData || []);
+      
+      // Load tenant maintenance requests
+      const maintenanceData = await getTenantMaintenanceRequests(tenantId);
+      setMaintenanceRequests(maintenanceData || []);
+      
+    } catch (error) {
+      console.error('Error loading tenant data:', error);
+      setMessage('Failed to load your data. Please try again.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('tenantInfo');
+    localStorage.removeItem('tenantToken');
+    navigate('/login');
   };
 
   const [paymentForm, setPaymentForm] = useState({
