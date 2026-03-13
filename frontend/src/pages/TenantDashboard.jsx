@@ -158,7 +158,7 @@ const TenantDashboard = () => {
             <h2>Make a Payment</h2>
             <form onSubmit={handlePaymentSubmit} className="payment-form">
               <div className="form-group">
-                <label htmlFor="amount">Amount ($)</label>
+                <label htmlFor="amount">Amount (KSH)</label>
                 <input
                   type="number"
                   id="amount"
@@ -249,7 +249,7 @@ const TenantDashboard = () => {
                   payments.map(payment => (
                     <div key={payment.id} className="history-item">
                       <div className="history-info">
-                        <strong>${payment.amount}</strong>
+                        <strong>KSH {payment.amount}</strong>
                         <span className="history-date">
                           {new Date(payment.payment_date).toLocaleDateString()}
                         </span>

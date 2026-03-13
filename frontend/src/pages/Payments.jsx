@@ -128,15 +128,16 @@ const Payments = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="amount">Amount ($)</label>
+              <label htmlFor="amount">Amount (KSH)</label>
               <input
                 type="number"
                 id="amount"
                 name="amount"
                 value={formData.amount}
                 onChange={handleInputChange}
-                step="0.01"
+                placeholder="Enter amount in KSH"
                 min="0"
+                step="0.01"
                 required
               />
             </div>
@@ -150,9 +151,10 @@ const Payments = () => {
                 onChange={handleInputChange}
               >
                 <option value="Cash">Cash</option>
+                <option value="M-Pesa">M-Pesa</option>
                 <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Check">Check</option>
                 <option value="Mobile Money">Mobile Money</option>
+                <option value="Check">Check</option>
               </select>
             </div>
 
@@ -207,7 +209,7 @@ const Payments = () => {
                 <tr key={payment.id}>
                   <td>{payment.id}</td>
                   <td className="tenant-name">{getTenantName(payment.tenant_id)}</td>
-                  <td className="amount">${parseFloat(payment.amount).toLocaleString()}</td>
+                  <td className="amount">KSH {parseFloat(payment.amount).toLocaleString()}</td>
                   <td>{new Date(payment.payment_date).toLocaleDateString()}</td>
                   <td className="payment-method">
                     <span className={`method-badge ${payment.payment_method.toLowerCase().replace(' ', '-')}`}>
@@ -225,7 +227,7 @@ const Payments = () => {
         <div className="summary-card">
           <h3>Total Payments</h3>
           <p className="total-amount">
-            ${payments.reduce((sum, p) => sum + parseFloat(p.amount), 0).toLocaleString()}
+            KSH {payments.reduce((sum, p) => sum + parseFloat(p.amount), 0).toLocaleString()}
           </p>
         </div>
         <div className="summary-card">
