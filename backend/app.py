@@ -645,6 +645,19 @@ def api_make_tenant_payment():
         return jsonify({"error": "Could not process payment"}), 500
 
 
+@app.route('/api/approved-tenants', methods=['GET'])
+def api_approved_tenants():
+    """Get approved tenants for dropdown"""
+    try:
+        cur = get_cursor()
+        cur.execute("SELECT id, name, house_number FROM tenants WHERE status = 'approved' ORDER BY name")
+        tenants = cur.fetchall()
+        cur.close()
+        return jsonify(tenants)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route('/reports', methods=['GET', 'POST'])
 def reports():
     if not session.get('logged_in'):

@@ -109,16 +109,47 @@
             <strong>DEBUG:</strong> Found {{ tenants_list|length }} tenants in dropdown
         </p>
         
-        <form method="POST" action="{{ url_for('add_payment') }}">
-            <div class="form-group">
-                <label for="tenant_id">Tenant</label>
-                <select name="tenant_id" id="tenant_id" required>
-                    <option value="">Select a tenant</option>
-                    {% for tenant in tenants_list %}
-                        <option value="{{ tenant[0] }}">{{ tenant[1] }} - House {{ tenant[2] }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+        <div class="form-group">
+            <label for="tenant_id">Tenant</label>
+            <select name="tenant_id" id="tenant_id" required onchange="loadTenantInfo(this.value)">
+                <option value="">Select a tenant</option>
+                {% for tenant in tenants_list %}
+                    <option value="{{ tenant[0] }}">{{ tenant[1] }} - House {{ tenant[2] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div id="tenantInfo" style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <h4>Selected Tenant Info</h4>
+            <div id="tenantDetails">Select a tenant to see details</div>
+        </div>
+        
+        <script>
+            async function loadTenantInfo(tenantId) {
+                if (!tenantId) {
+                    document.getElementById('tenantDetails').innerHTML = 'Select a tenant to see details';
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/approved-tenants');
+                    const tenants = await response.json();
+                    const selectedTenant = tenants.find(t => t[0] == parseInt(tenantId));
+                    
+                    if (selectedTenant) {
+                        document.getElementById('tenantDetails').innerHTML = `
+                            <p><strong>Name:</strong> ${selectedTenant[1]}</p>
+                            <p><strong>House:</strong> ${selectedTenant[2]}</p>
+                            <p><strong>ID:</strong> ${selectedTenant[0]}</p>
+                        `;
+                    } else {
+                        document.getElementById('tenantDetails').innerHTML = 'Tenant not found';
+                    }
+                } catch (error) {
+                    console.error('Error loading tenant info:', error);
+                }
+            }
+        </script>
             
             <div class="form-group">
                 <label for="amount">Amount (KSH)</label>
