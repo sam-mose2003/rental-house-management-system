@@ -5,47 +5,34 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Chrome",
+            "name": "Launch Frontend (Tenant Portal)",
             "request": "launch",
             "type": "chrome",
-            "url": "http://localhost:8080",
+            "url": "http://localhost:5176",
+            "webRoot": "${workspaceFolder}/frontend"
+        },
+        {
+            "name": "Launch Admin Dashboard (Flask)",
+            "request": "launch",
+            "type": "chrome", 
+            "url": "http://localhost:5000/dashboard",
             "webRoot": "${workspaceFolder}"
         },
         {
-            "name": "Launch Chrome",
+            "name": "Launch Admin Choice Page",
             "request": "launch",
             "type": "chrome",
-            "url": "http://localhost:8080",
+            "url": "http://localhost:5000",
             "webRoot": "${workspaceFolder}"
-        },
-
+        }
+    ],
+    "compounds": [
         {
-            "name": "Launch Chrome",
-            "request": "launch",
-            "type": "chrome",
-            "url": "http://localhost:8080",
-            "webRoot": "${workspaceFolder}"
-        },
-        {
-            "name": "Launch Chrome",
-            "request": "launch",
-            "type": "chrome",
-            "url": "http://localhost:8080",
-            "webRoot": "${workspaceFolder}"
-        },
-        {
-            "name": "Launch Chrome",
-            "request": "launch",
-            "type": "chrome",
-            "url": "http://localhost:8080",
-            "webRoot": "${workspaceFolder}"
-        },
-        {
-            "type": "chrome",
-            "request": "launch",
-            "name": "Launch Chrome against localhost",
-            "url": "http://localhost:8080",
-            "webRoot": "${workspaceFolder}"
+            "name": "Launch Full RHMS System",
+            "configurations": [
+                "Launch Frontend (Tenant Portal)",
+                "Launch Admin Dashboard (Flask)"
+            ]
         }
     ]
 }
