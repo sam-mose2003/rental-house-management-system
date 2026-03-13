@@ -522,8 +522,8 @@ def add_payment():
             except MySQLdb.ProgrammingError:
                 mysql.connection.rollback()
                 flash('Failed to add payment. Please try again.', 'error')
-        except Exception as e:
-            print(f"Error in add_payment: {e}")
+            except Exception as e:
+                print(f"Error in add_payment: {e}")
         return redirect(url_for('payments'))
     return render_template("payments.html", payments=get_payments(), tenants_list=tenants_list)
     print(f"Rendering payments.html with tenants_list: {tenants_list}")
