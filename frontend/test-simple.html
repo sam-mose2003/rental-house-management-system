@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Test</title>
+</head>
+<body>
+    <h1>Frontend Test Page</h1>
+    <p>If you can see this, the frontend server is working.</p>
+    
+    <div id="test-result"></div>
+    
+    <script>
+        // Test API connection
+        fetch('http://localhost:5000/api/dashboard-stats')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('test-result').innerHTML = 
+                    '<h2>✅ Backend API Working!</h2><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            })
+            .catch(error => {
+                document.getElementById('test-result').innerHTML = 
+                    '<h2>❌ Backend API Error:</h2><p>' + error.message + '</p>';
+            });
+    </script>
+</body>
+</html>
