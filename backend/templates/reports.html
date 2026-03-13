@@ -7,10 +7,21 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
-    .report-box { max-width:900px; }
+    .report-box { max-width:900px; background:white; padding:20px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
     select, button { padding:10px; border-radius:5px; border:1px solid #ccc; margin-right:10px; }
-    button { background:#2c3e50; color:white; border:none; cursor:pointer; }
-    .chart-placeholder { height:300px; background:#e1e5ee; display:flex; justify-content:center; align-items:center; border-radius:8px; margin-top:15px; font-weight:bold; color:#333; }
+    button { background:#2c3e50; color:white; border:none; cursor:pointer; transition:background 0.3s; }
+    button:hover { background:#34495e; }
+    .report-result { margin-top:20px; }
+    .report-table { width:100%; border-collapse:collapse; margin-top:15px; }
+    .report-table th, .report-table td { padding:12px; text-align:left; border-bottom:1px solid #ddd; }
+    .report-table th { background:#f8f9fa; font-weight:bold; }
+    .report-summary { background:#e3f2fd; padding:15px; border-radius:8px; margin-bottom:20px; }
+    .summary-item { display:inline-block; margin-right:30px; }
+    .summary-label { color:#666; font-size:14px; }
+    .summary-value { font-size:24px; font-weight:bold; color:#1976d2; }
+    .no-data { text-align:center; padding:40px; color:#666; }
+    .export-btn { background:#27ae60; margin-left:10px; }
+    .export-btn:hover { background:#229954; }
   </style>
 </head>
 <body>
@@ -30,13 +41,232 @@
 <div class="main">
   <div class="header"><h2>View Reports</h2></div>
   <div class="report-box">
-    <select>
-      <option value="rent">Rent Collection</option>
-      <option value="occupancy">Occupancy</option>
-      <option value="outstanding">Outstanding Rent</option>
-    </select>
-    <button type="button">Generate Report</button>
-    <div class="chart-placeholder">Chart / Table Placeholder</div>
+    <h3>Generate Reports</h3>
+    <form method="POST" action="{{ url_for('reports') }}">
+      <select name="report_type" required>
+        <option value="">Select Report Type</option>
+        <option value="rent_collection">Rent Collection</option>
+        <option value="occupancy">Occupancy Status</option>
+        <option value="outstanding">Outstanding Rent</option>
+        <option value="tenant_list">Tenant List</option>
+        <option value="payment_summary">Payment Summary</option>
+      </select>
+      <button type="submit">Generate Report</button>
+    </form>
+    
+    {% if report_data %}
+    <div class="report-result">
+      {% if report_type == 'rent_collection' %}
+        <div class="report-summary">
+          <div class="summary-item">
+            <div class="summary-label">Total Collected</div>
+            <div class="summary-value">KSH {{ report_data.total_collected|round|int|default(0) }}</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Number of Payments</div>
+            <div class="summary-value">{{ report_data.payments|length }}</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Average Payment</div>
+            <div class="summary-value">KSH {{ report_data.average_payment|round|int|default(0) }}</div>
+          </div>
+        </div>
+        
+        <h4>Recent Payments</h4>
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Tenant</th>
+              <th>Amount (KSH)</th>
+              <th>Method</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for payment in report_data.payments %}
+            <tr>
+              <td>{{ payment[3] }}</td>
+              <td>{{ payment[1] }}</td>
+              <td>{{ payment[2] }}</td>
+              <td>{{ payment[4] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% elif report_type == 'occupancy' %}
+        <div class="report-summary">
+          <div class="summary-item">
+            <div class="summary-label">Total Houses</div>
+            <div class="summary-value">{{ report_data.total_houses }}</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Occupied</div>
+            <div class="summary-value" style="color:#27ae60;">{{ report_data.occupied }}</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Vacant</div>
+            <div class="summary-value" style="color:#e74c3c;">{{ report_data.vacant }}</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Occupancy Rate</div>
+            <div class="summary-value">{{ report_data.occupancy_rate }}%</div>
+          </div>
+        </div>
+        
+        <h4>House Status Details</h4>
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>House Number</th>
+              <th>Status</th>
+              <th>Tenant</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for house in report_data.houses %}
+            <tr>
+              <td>{{ house[1] }}</td>
+              <td>
+                {% if house[2] == 'Occupied' %}
+                  <span style="color:#27ae60; font-weight:bold;">{{ house[2] }}</span>
+                {% else %}
+                  <span style="color:#e74c3c; font-weight:bold;">{{ house[2] }}</span>
+                {% endif %}
+              </td>
+              <td>{{ house[3] or '-' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% elif report_type == 'outstanding' %}
+        <div class="report-summary">
+          <div class="summary-item">
+            <div class="summary-label">Outstanding Amount</div>
+            <div class="summary-value" style="color:#e74c3c;">KSH {{ report_data.total_outstanding|round|int|default(0) }}</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Tenants with Outstanding</div>
+            <div class="summary-value">{{ report_data.tenants|length }}</div>
+          </div>
+        </div>
+        
+        <h4>Outstanding Rent Details</h4>
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Tenant</th>
+              <th>House</th>
+              <th>Expected Monthly Rent</th>
+              <th>Last Payment Date</th>
+              <th>Outstanding Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for tenant in report_data.tenants %}
+            <tr>
+              <td>{{ tenant[1] }}</td>
+              <td>{{ tenant[2] }}</td>
+              <td>KSH {{ tenant[3]|round|int|default(0) }}</td>
+              <td>{{ tenant[4] or 'No payments yet' }}</td>
+              <td style="color:#e74c3c; font-weight:bold;">KSH {{ tenant[5]|round|int|default(0) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% elif report_type == 'tenant_list' %}
+        <div class="report-summary">
+          <div class="summary-item">
+            <div class="summary-label">Total Tenants</div>
+            <div class="summary-value">{{ report_data.tenants|length }}</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Approved Tenants</div>
+            <div class="summary-value" style="color:#27ae60;">{{ report_data.approved_count }}</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Pending Tenants</div>
+            <div class="summary-value" style="color:#f39c12;">{{ report_data.pending_count }}</div>
+          </div>
+        </div>
+        
+        <h4>Tenant Details</h4>
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>House</th>
+              <th>Contact</th>
+              <th>Status</th>
+              <th>Move-in Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for tenant in report_data.tenants %}
+            <tr>
+              <td>{{ tenant[1] }}</td>
+              <td>{{ tenant[2] }}</td>
+              <td>{{ tenant[4] }}</td>
+              <td>
+                {% if tenant[5] == 'approved' %}
+                  <span style="color:#27ae60; font-weight:bold;">{{ tenant[5] }}</span>
+                {% elif tenant[5] == 'pending' %}
+                  <span style="color:#f39c12; font-weight:bold;">{{ tenant[5] }}</span>
+                {% else %}
+                  <span style="color:#e74c3c; font-weight:bold;">{{ tenant[5] }}</span>
+                {% endif %}
+              </td>
+              <td>{{ tenant[6] or '-' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% elif report_type == 'payment_summary' %}
+        <div class="report-summary">
+          <div class="summary-item">
+            <div class="summary-label">Total Payments</div>
+            <div class="summary-value">{{ report_data.total_count }}</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Total Amount</div>
+            <div class="summary-value">KSH {{ report_data.total_amount|round|int|default(0) }}</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Average Payment</div>
+            <div class="summary-value">KSH {{ report_data.average_amount|round|int|default(0) }}</div>
+          </div>
+        </div>
+        
+        <h4>Payment Method Breakdown</h4>
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Payment Method</th>
+              <th>Count</th>
+              <th>Total Amount (KSH)</th>
+              <th>Percentage</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for method in report_data.method_breakdown %}
+            <tr>
+              <td>{{ method[0] }}</td>
+              <td>{{ method[1] }}</td>
+              <td>{{ method[2]|round|int|default(0) }}</td>
+              <td>{{ method[3] }}%</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    </div>
+    {% endif %}
+    
+    {% if not report_data and request.method == 'POST' %}
+    <div class="no-data">
+      <i class="fa fa-exclamation-triangle" style="font-size:48px; color:#f39c12; margin-bottom:20px;"></i>
+      <p>No data available for the selected report type.</p>
+    </div>
+    {% endif %}
   </div>
 </div>
 

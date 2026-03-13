@@ -378,11 +378,130 @@ def add_payment():
     return render_template("payments.html", payments=get_payments(), tenants_list=tenants_list)
 
 
-@app.route('/reports')
+@app.route('/reports', methods=['GET', 'POST'])
 def reports():
     if not session.get('logged_in'):
         return redirect(url_for('home'))
-    return render_template("reports.html")
+    
+    report_data = None
+    report_type = None
+    
+    if request.method == 'POST':
+        report_type = request.form.get('report_type')
+        cur = get_cursor()
+        
+        if report_type == 'rent_collection':
+            # Rent Collection Report
+            cur.execute("""
+                SELECT p.id, t.name, p.amount, p.payment_date, p.payment_method 
+                FROM payments p 
+                JOIN tenants t ON p.tenant_id = t.id 
+                ORDER BY p.payment_date DESC 
+                LIMIT 50
+            """)
+            payments = cur.fetchall()
+            
+            total_collected = sum(p[2] for p in payments) if payments else 0
+            average_payment = total_collected / len(payments) if payments else 0
+            
+            report_data = {
+                'payments': payments,
+                'total_collected': total_collected,
+                'average_payment': average_payment
+            }
+            
+        elif report_type == 'occupancy':
+            # Occupancy Status Report
+            cur.execute("""
+                SELECT h.id, h.house_number, h.status, t.name 
+                FROM houses h 
+                LEFT JOIN tenants t ON h.house_number = t.house_number AND t.status = 'approved'
+                ORDER BY h.house_number
+            """)
+            houses = cur.fetchall()
+            
+            total_houses = len(houses)
+            occupied = sum(1 for h in houses if h[2] == 'Occupied')
+            vacant = total_houses - occupied
+            occupancy_rate = round((occupied / total_houses * 100), 1) if total_houses > 0 else 0
+            
+            report_data = {
+                'houses': houses,
+                'total_houses': total_houses,
+                'occupied': occupied,
+                'vacant': vacant,
+                'occupancy_rate': occupancy_rate
+            }
+            
+        elif report_type == 'outstanding':
+            # Outstanding Rent Report
+            cur.execute("""
+                SELECT t.id, t.name, t.house_number, 10000 as expected_rent,
+                       MAX(p.payment_date) as last_payment,
+                       (10000 - COALESCE(SUM(p.amount), 0)) as outstanding
+                FROM tenants t 
+                LEFT JOIN payments p ON t.id = p.tenant_id 
+                WHERE t.status = 'approved'
+                GROUP BY t.id, t.name, t.house_number
+                HAVING outstanding > 0
+            """)
+            tenants = cur.fetchall()
+            
+            total_outstanding = sum(t[5] for t in tenants) if tenants else 0
+            
+            report_data = {
+                'tenants': tenants,
+                'total_outstanding': total_outstanding
+            }
+            
+        elif report_type == 'tenant_list':
+            # Tenant List Report
+            cur.execute("""
+                SELECT t.id, t.name, t.house_number, t.national_id, t.phone, t.status, t.move_in_date
+                FROM tenants t 
+                ORDER BY t.name
+            """)
+            tenants = cur.fetchall()
+            
+            approved_count = sum(1 for t in tenants if t[5] == 'approved')
+            pending_count = sum(1 for t in tenants if t[5] == 'pending')
+            
+            report_data = {
+                'tenants': tenants,
+                'approved_count': approved_count,
+                'pending_count': pending_count
+            }
+            
+        elif report_type == 'payment_summary':
+            # Payment Summary Report
+            cur.execute("""
+                SELECT payment_method, COUNT(*) as count, SUM(amount) as total
+                FROM payments 
+                GROUP BY payment_method 
+                ORDER BY total DESC
+            """)
+            methods = cur.fetchall()
+            
+            total_amount = sum(m[2] for m in methods) if methods else 0
+            total_count = sum(m[1] for m in methods) if methods else 0
+            average_amount = total_amount / total_count if total_count > 0 else 0
+            
+            # Calculate percentages
+            method_breakdown = []
+            for method in methods:
+                percentage = round((method[2] / total_amount * 100), 1) if total_amount > 0 else 0
+                method_breakdown.append((method[0], method[1], method[2], percentage))
+            
+            report_data = {
+                'method_breakdown': method_breakdown,
+                'total_amount': total_amount,
+                'total_count': total_count,
+                'average_amount': average_amount
+            }
+        
+        cur.close()
+    
+    return render_template("reports.html", report_data=report_data, report_type=report_type)
 
 
 @app.route('/maintenance', methods=['GET', 'POST'])
