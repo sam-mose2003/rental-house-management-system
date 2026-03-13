@@ -545,7 +545,7 @@ def api_tenant_login():
         cur.execute("""
             SELECT id, name, national_id, phone, email, house_number, status, move_in_date
             FROM tenants 
-            WHERE email = %s AND status = 'approved'
+            WHERE email = %s
         """, (email,))
         tenant = cur.fetchone()
         

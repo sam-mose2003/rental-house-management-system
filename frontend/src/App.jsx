@@ -341,6 +341,7 @@ function TenantLogin() {
 
 function TenantDashboard() {
   const [tenantInfo, setTenantInfo] = useState(null);
+  const [applicationStatus, setApplicationStatus] = useState('pending');
 
   useEffect(() => {
     const storedTenant = localStorage.getItem('tenantInfo');
@@ -354,6 +355,7 @@ function TenantDashboard() {
     try {
       const tenant = JSON.parse(storedTenant);
       setTenantInfo(tenant);
+      setApplicationStatus(tenant.status || 'pending');
     } catch (error) {
       window.location.href = '/login';
     }
@@ -363,6 +365,33 @@ function TenantDashboard() {
     localStorage.removeItem('tenantInfo');
     localStorage.removeItem('tenantToken');
     window.location.href = '/login';
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'approved': return '#27ae60';
+      case 'rejected': return '#e74c3c';
+      case 'pending': return '#f39c12';
+      default: return '#666';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'approved': return '✅';
+      case 'rejected': return '❌';
+      case 'pending': return '⏳';
+      default: return '📝';
+    }
+  };
+
+  const getStatusMessage = (status) => {
+    switch (status) {
+      case 'approved': return 'Your application has been approved! You can now access your house.';
+      case 'rejected': return 'Your application has been rejected. Please contact support for details.';
+      case 'pending': return 'Your application is under review. We will notify you once a decision is made.';
+      default: return 'Application status unknown. Please contact support.';
+    }
   };
 
   if (!tenantInfo) {
@@ -385,29 +414,108 @@ function TenantDashboard() {
         </div>
         
         <div className="dashboard-content">
+          {/* Application Status Card */}
+          <div className="status-card" style={{ 
+            background: `linear-gradient(135deg, ${getStatusColor(applicationStatus)}15, ${getStatusColor(applicationStatus)}05)`,
+            border: `2px solid ${getStatusColor(applicationStatus)}30`
+          }}>
+            <div className="status-header">
+              <h3>📋 Application Status</h3>
+              <span className="status-badge" style={{ 
+                backgroundColor: getStatusColor(applicationStatus),
+                color: 'white'
+              }}>
+                {getStatusIcon(applicationStatus)} {applicationStatus.toUpperCase()}
+              </span>
+            </div>
+            <p className="status-message">{getStatusMessage(applicationStatus)}</p>
+            
+            {/* Progress Timeline */}
+            <div className="progress-timeline">
+              <div className={`timeline-item ${applicationStatus === 'pending' ? 'active' : 'completed'}`}>
+                <div className="timeline-dot">📝</div>
+                <div className="timeline-content">
+                  <h4>Application Submitted</h4>
+                  <p>Your tenant application has been received</p>
+                </div>
+              </div>
+              
+              <div className={`timeline-item ${applicationStatus === 'approved' ? 'active' : applicationStatus === 'pending' ? 'pending' : 'rejected'}`}>
+                <div className="timeline-dot">
+                  {applicationStatus === 'approved' ? '✅' : applicationStatus === 'rejected' ? '❌' : '⏳'}
+                </div>
+                <div className="timeline-content">
+                  <h4>Review Process</h4>
+                  <p>
+                    {applicationStatus === 'approved' ? 'Application approved!' : 
+                     applicationStatus === 'rejected' ? 'Application rejected' : 
+                     'Your application is being reviewed'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className={`timeline-item ${applicationStatus === 'approved' ? 'active' : 'disabled'}`}>
+                <div className="timeline-dot">🏠</div>
+                <div className="timeline-content">
+                  <h4>House Assignment</h4>
+                  <p>
+                    {applicationStatus === 'approved' ? 
+                      `House ${tenantInfo.house_number} assigned to you` : 
+                      'Waiting for house assignment'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tenant Information Card */}
           <div className="info-card">
             <h3>🏠 Your Information</h3>
-            <p><strong>Full Name:</strong> {tenantInfo.name}</p>
-            <p><strong>House Number:</strong> {tenantInfo.house_number}</p>
-            <p><strong>Email:</strong> {tenantInfo.email}</p>
-            <p><strong>Phone:</strong> {tenantInfo.phone}</p>
-            <p><strong>Status:</strong> <span style={{color: '#48bb78', fontWeight: '600'}}>✅ Active Tenant</span></p>
+            <div className="info-grid">
+              <div className="info-item">
+                <span className="info-label">Name:</span>
+                <span className="info-value">{tenantInfo.name}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Email:</span>
+                <span className="info-value">{tenantInfo.email}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Phone:</span>
+                <span className="info-value">{tenantInfo.phone}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">National ID:</span>
+                <span className="info-value">{tenantInfo.national_id}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Requested House:</span>
+                <span className="info-value">{tenantInfo.house_number || 'Not assigned yet'}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Move-in Date:</span>
+                <span className="info-value">{tenantInfo.move_in_date || 'Not determined yet'}</span>
+              </div>
+            </div>
           </div>
-          
-          <div className="info-card">
-            <h3>🚀 Quick Actions</h3>
-            <button className="action-btn">💳 Make Payment</button>
-            <button className="action-btn">🔧 Maintenance Request</button>
-            <button className="action-btn">📊 Payment History</button>
-            <button className="action-btn">📧 Contact Support</button>
-          </div>
-          
-          <div className="info-card">
-            <h3>📈 Account Summary</h3>
-            <p><strong>Current Month:</strong> {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
-            <p><strong>Rent Due:</strong> <span style={{color: '#e53e3e', fontWeight: '600'}}>KSH 10,000</span></p>
-            <p><strong>Payment Status:</strong> <span style={{color: '#ed8936', fontWeight: '600'}}>⏰ Pending</span></p>
-            <p><strong>Move-in Date:</strong> {tenantInfo.move_in_date ? new Date(tenantInfo.move_in_date).toLocaleDateString() : 'Not set'}</p>
+
+          {/* Quick Actions Card */}
+          <div className="actions-card">
+            <h3>⚡ Quick Actions</h3>
+            <div className="action-buttons">
+              <button className="action-btn" onClick={() => window.location.href = '/'}>
+                📝 Update Application
+              </button>
+              <button className="action-btn" onClick={() => alert('Contact: support@rhms.com')}>
+                📧 Contact Support
+              </button>
+              <button className="action-btn" onClick={() => alert('Coming soon!')}>
+                📄 View Documents
+              </button>
+              <button className="action-btn" onClick={() => alert('Coming soon!')}>
+                💳 Make Payment
+              </button>
+            </div>
           </div>
         </div>
       </div>
