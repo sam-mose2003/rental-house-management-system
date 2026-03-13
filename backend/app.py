@@ -351,7 +351,7 @@ def add_payment():
         return redirect(url_for('home'))
     try:
         cur = get_cursor()
-        cur.execute("SELECT id, name FROM tenants")
+        cur.execute("SELECT id, name, house_number FROM tenants WHERE status = 'approved'")
         tenants_list = cur.fetchall()
         cur.close()
     except MySQLdb.ProgrammingError:
@@ -370,10 +370,12 @@ def add_payment():
                 )
                 mysql.connection.commit()
                 cur.close()
+                flash('Payment added successfully!', 'success')
             except MySQLdb.ProgrammingError:
                 mysql.connection.rollback()
+                flash('Failed to add payment. Please try again.', 'error')
             return redirect(url_for('payments'))
-    return render_template("add_payment.html", tenants=tenants_list)
+    return render_template("payments.html", payments=get_payments(), tenants_list=tenants_list)
 
 
 @app.route('/reports')

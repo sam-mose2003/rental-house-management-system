@@ -110,7 +110,7 @@
                 <select name="tenant_id" id="tenant_id" required>
                     <option value="">Select a tenant</option>
                     {% for tenant in tenants_list %}
-                        <option value="{{ tenant[0] }}">{{ tenant[1] }} - {{ tenant[2] }}</option>
+                        <option value="{{ tenant[0] }}">{{ tenant[1] }} - House {{ tenant[2] }}</option>
                     {% endfor %}
                 </select>
             </div>
