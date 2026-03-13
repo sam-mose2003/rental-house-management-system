@@ -233,11 +233,31 @@ def houses():
     if not session.get('logged_in'):
         return redirect(url_for('home'))
     cur = get_cursor()
+    
+    # Get houses list with tenant info
     try:
-        cur.execute("SELECT * FROM houses")
+        cur.execute("""
+            SELECT h.id, h.house_number, h.status, t.name 
+            FROM houses h 
+            LEFT JOIN tenants t ON h.house_number = t.house_number AND t.status = 'approved'
+            ORDER BY h.house_number
+        """)
         houses_list = cur.fetchall()
     except MySQLdb.ProgrammingError:
         houses_list = []
+    
+    # Get pending tenant requests
+    try:
+        cur.execute("""
+            SELECT t.id, t.name, t.house_number, t.national_id, t.phone, t.email, t.move_in_date
+            FROM tenants t 
+            WHERE t.status = 'pending'
+            ORDER BY t.created_at DESC
+        """)
+        pending_requests = cur.fetchall()
+    except MySQLdb.ProgrammingError:
+        pending_requests = []
+    
     if request.method == 'POST':
         house_number = request.form.get('house_number')
         status = request.form.get('status', 'Vacant')
@@ -248,16 +268,130 @@ def houses():
                     (house_number, status)
                 )
                 mysql.connection.commit()
+                flash('House added successfully!', 'success')
             except (MySQLdb.ProgrammingError, MySQLdb.IntegrityError):
                 mysql.connection.rollback()
+                flash('House number already exists!', 'error')
+            # Refresh houses list
             try:
-                cur.execute("SELECT * FROM houses")
+                cur.execute("""
+                    SELECT h.id, h.house_number, h.status, t.name 
+                    FROM houses h 
+                    LEFT JOIN tenants t ON h.house_number = t.house_number AND t.status = 'approved'
+                    ORDER BY h.house_number
+                """)
                 houses_list = cur.fetchall()
             except MySQLdb.ProgrammingError:
                 houses_list = []
         return redirect(url_for('houses'))
+    
     cur.close()
-    return render_template("houses.html", houses=houses_list)
+    return render_template("houses.html", houses=houses_list, pending_requests=pending_requests)
+
+
+@app.route('/approve_tenant_request', methods=['POST'])
+def approve_tenant_request():
+    if not session.get('logged_in'):
+        return redirect(url_for('home'))
+    
+    tenant_id = request.form.get('tenant_id')
+    
+    if tenant_id:
+        cur = get_cursor()
+        try:
+            # Get tenant info
+            cur.execute("SELECT house_number FROM tenants WHERE id = %s", (tenant_id,))
+            tenant_info = cur.fetchone()
+            
+            if tenant_info:
+                house_number = tenant_info[0]
+                
+                # Approve tenant
+                cur.execute("UPDATE tenants SET status = 'approved' WHERE id = %s", (tenant_id,))
+                
+                # Update house status to occupied
+                cur.execute("UPDATE houses SET status = 'Occupied' WHERE house_number = %s", (house_number,))
+                
+                mysql.connection.commit()
+                flash(f'Tenant request approved! House {house_number} is now occupied.', 'success')
+            else:
+                flash('Tenant not found!', 'error')
+                
+        except MySQLdb.ProgrammingError:
+            mysql.connection.rollback()
+            flash('Failed to approve tenant request!', 'error')
+        finally:
+            cur.close()
+    
+    return redirect(url_for('houses'))
+
+
+@app.route('/reject_tenant_request', methods=['POST'])
+def reject_tenant_request():
+    if not session.get('logged_in'):
+        return redirect(url_for('home'))
+    
+    tenant_id = request.form.get('tenant_id')
+    
+    if tenant_id:
+        cur = get_cursor()
+        try:
+            # Get tenant info
+            cur.execute("SELECT name, house_number FROM tenants WHERE id = %s", (tenant_id,))
+            tenant_info = cur.fetchone()
+            
+            if tenant_info:
+                name, house_number = tenant_info
+                
+                # Delete tenant record (or update status to rejected)
+                cur.execute("DELETE FROM tenants WHERE id = %s", (tenant_id,))
+                
+                # Keep house as vacant
+                cur.execute("UPDATE houses SET status = 'Vacant' WHERE house_number = %s", (house_number,))
+                
+                mysql.connection.commit()
+                flash(f'Tenant request for {name} (House {house_number}) has been rejected.', 'success')
+            else:
+                flash('Tenant not found!', 'error')
+                
+        except MySQLdb.ProgrammingError:
+            mysql.connection.rollback()
+            flash('Failed to reject tenant request!', 'error')
+        finally:
+            cur.close()
+    
+    return redirect(url_for('houses'))
+
+
+@app.route('/delete_house', methods=['POST'])
+def delete_house():
+    if not session.get('logged_in'):
+        return redirect(url_for('home'))
+    
+    house_id = request.form.get('house_id')
+    
+    if house_id:
+        cur = get_cursor()
+        try:
+            # Check if house is occupied
+            cur.execute("SELECT house_number, status FROM houses WHERE id = %s", (house_id,))
+            house_info = cur.fetchone()
+            
+            if house_info and house_info[1] != 'Occupied':
+                # Delete house
+                cur.execute("DELETE FROM houses WHERE id = %s", (house_id,))
+                mysql.connection.commit()
+                flash('House deleted successfully!', 'success')
+            else:
+                flash('Cannot delete occupied house!', 'error')
+                
+        except MySQLdb.ProgrammingError:
+            mysql.connection.rollback()
+            flash('Failed to delete house!', 'error')
+        finally:
+            cur.close()
+    
+    return redirect(url_for('houses'))
 
 
 @app.route('/payments')
