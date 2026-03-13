@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Test</title>
+</head>
+<body>
+    <h1>Simple API Test</h1>
+    
+    <h2>Test 1: Direct API Call</h2>
+    <button onclick="testAPI()">Test Approved Tenants API</button>
+    <div id="result1"></div>
+    
+    <h2>Test 2: Check Backend</h2>
+    <button onclick="testBackend()">Test Backend Connection</button>
+    <div id="result2"></div>
+    
+    <script>
+        async function testAPI() {
+            try {
+                const response = await fetch('http://localhost:5000/api/tenants');
+                const data = await response.json();
+                const approved = data.filter(t => t.status === 'approved');
+                document.getElementById('result1').innerHTML = 
+                    `<h3>✅ API Works!</h3>
+                    <p><strong>Total Tenants:</strong> ${data.length}</p>
+                    <p><strong>Approved:</strong> ${approved.length}</p>
+                    <p><strong>First Approved:</strong> ${approved[0]?.name || 'None'}</p>`;
+            } catch (error) {
+                document.getElementById('result1').innerHTML = 
+                    `<h3>❌ API Error</h3><p>${error.message}</p>`;
+            }
+        }
+        
+        async function testBackend() {
+            try {
+                const response = await fetch('http://localhost:5000/payments');
+                const text = await response.text();
+                document.getElementById('result2').innerHTML = 
+                    `<h3>✅ Backend Responding</h3>
+                    <p>Status: ${response.status}</p>
+                    <p>Content length: ${text.length} characters</p>
+                    <p>First 200 chars: ${text.substring(0, 200)}...</p>`;
+            } catch (error) {
+                document.getElementById('result2').innerHTML = 
+                    `<h3>❌ Backend Error</h3><p>${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -104,6 +104,11 @@
     
     <div id="paymentForm" class="payment-form">
         <h3>Add New Payment</h3>
+        <!-- Debug: Show tenants_list length -->
+        <p style="background: #f0f0f0; padding: 10px; margin-bottom: 10px;">
+            <strong>DEBUG:</strong> Found {{ tenants_list|length }} tenants in dropdown
+        </p>
+        
         <form method="POST" action="{{ url_for('add_payment') }}">
             <div class="form-group">
                 <label for="tenant_id">Tenant</label>

@@ -512,6 +512,7 @@ def add_payment():
                 flash('Failed to add payment. Please try again.', 'error')
             return redirect(url_for('payments'))
     return render_template("payments.html", payments=get_payments(), tenants_list=tenants_list)
+    print(f"Rendering payments.html with tenants_list: {tenants_list}")
 
 
 @app.route('/api/tenant-login', methods=['POST'])
