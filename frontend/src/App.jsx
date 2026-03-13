@@ -39,6 +39,25 @@ function RegistrationForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Phone validation: numbers only, exactly 10 digits
+    if (name === 'phone') {
+      const phoneOnly = value.replace(/\D/g, '');
+      if (phoneOnly.length <= 10) {
+        setForm((prev) => ({ ...prev, [name]: phoneOnly }));
+      }
+      return;
+    }
+    
+    // National ID validation: numbers only, 8-12 digits
+    if (name === 'national_id') {
+      const idOnly = value.replace(/\D/g, '');
+      if (idOnly.length <= 12) {
+        setForm((prev) => ({ ...prev, [name]: idOnly }));
+      }
+      return;
+    }
+    
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -125,7 +144,9 @@ function RegistrationForm() {
                   name="national_id"
                   value={form.national_id}
                   onChange={handleChange}
-                  placeholder="Enter your national ID"
+                  placeholder="Enter your national ID (8-12 digits)"
+                  pattern="[0-9]{8,12}"
+                  title="National ID must be 8-12 digits"
                   required
                 />
               </div>
@@ -141,6 +162,9 @@ function RegistrationForm() {
                   value={form.phone}
                   onChange={handleChange}
                   placeholder="07XX XXX XXX"
+                  pattern="[0-9]{10}"
+                  title="Phone number must be exactly 10 digits"
+                  maxLength="10"
                   required
                 />
               </div>
