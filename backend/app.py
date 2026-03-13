@@ -486,11 +486,14 @@ def add_payment():
         return redirect(url_for('home'))
     try:
         cur = get_cursor()
-        cur.execute("SELECT id, name, house_number FROM tenants WHERE status = 'approved' ORDER BY name")
+        query = "SELECT id, name, house_number FROM tenants WHERE status = 'approved' ORDER BY name"
+        print(f"Executing query: {query}")
+        cur.execute(query)
         tenants_list = cur.fetchall()
-        print(f"Tenants for payment dropdown: {tenants_list}")
+        print(f"Query result: {tenants_list}")
         cur.close()
-    except MySQLdb.ProgrammingError:
+    except MySQLdb.ProgrammingError as e:
+        print(f"Database error: {e}")
         tenants_list = []
     if request.method == 'POST':
         tenant_id = request.form.get('tenant_id')
