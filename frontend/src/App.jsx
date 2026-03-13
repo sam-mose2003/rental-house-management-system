@@ -85,9 +85,7 @@ function RegistrationForm() {
   if (loadingHouses) {
     return (
       <div className="app">
-        <div className="registration-container">
-          <h2>Loading available houses...</h2>
-        </div>
+        <div className="loading">Loading available houses...</div>
       </div>
     );
   }
@@ -95,8 +93,8 @@ function RegistrationForm() {
   return (
     <div className="app">
       <div className="registration-container">
-        <h1>Rental House Management System</h1>
-        <h2>Tenant Registration</h2>
+        <h1>RHMS</h1>
+        <h2>Tenant Registration Portal</h2>
         
         {message && (
           <div className={`message ${messageType}`}>
@@ -142,19 +140,19 @@ function RegistrationForm() {
                   name="phone"
                   value={form.phone}
                   onChange={handleChange}
-                  placeholder="Enter your phone number"
+                  placeholder="07XX XXX XXX"
                   required
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="email">Email</label>
+                <label htmlFor="email">Email Address</label>
                 <input
                   type="email"
                   id="email"
                   name="email"
                   value={form.email}
                   onChange={handleChange}
-                  placeholder="Enter your email"
+                  placeholder="your@email.com"
                   required
                 />
               </div>
@@ -162,7 +160,7 @@ function RegistrationForm() {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="house_number">House Number</label>
+                <label htmlFor="house_number">Select House</label>
                 <select
                   id="house_number"
                   name="house_number"
@@ -170,10 +168,10 @@ function RegistrationForm() {
                   onChange={handleChange}
                   required
                 >
-                  <option value="">Select a house</option>
+                  <option value="">Choose a house</option>
                   {houses.map((house) => (
                     <option key={house.id} value={house.house_number}>
-                      {house.house_number} - {house.type} (KSH {house.rent}/month)
+                      House {house.house_number} - {house.type || 'Standard'} - KSH {house.rent || 10000}/month
                     </option>
                   ))}
                 </select>
@@ -193,14 +191,14 @@ function RegistrationForm() {
             </div>
 
             <button type="submit" className="submit-btn" disabled={submitting}>
-              {submitting ? 'Submitting...' : 'Submit application'}
+              {submitting ? 'Submitting Application...' : 'Complete Registration'}
             </button>
           </form>
         ) : (
           <div className="success-message">
-            <h3>Registration Submitted!</h3>
-            <p>Your application has been submitted and is pending approval.</p>
-            <p>You will be notified once your application is approved.</p>
+            <h3>🎉 Registration Successful!</h3>
+            <p>Your application has been submitted and is currently pending approval.</p>
+            <p>You will receive an email notification once your application has been reviewed.</p>
             <button onClick={() => window.location.reload()} className="submit-btn">
               Submit Another Application
             </button>
@@ -264,7 +262,7 @@ function TenantLogin() {
   return (
     <div className="tenant-login-container">
       <div className="login-card">
-        <h2>Tenant Login</h2>
+        <h2>Welcome Back</h2>
         
         {message && (
           <div className={`message ${messageType}`}>
@@ -274,14 +272,14 @@ function TenantLogin() {
         
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">Email Address</label>
             <input
               type="email"
               id="email"
               name="email"
               value={form.email}
               onChange={handleChange}
-              placeholder="Enter your email"
+              placeholder="your@email.com"
               required
             />
           </div>
@@ -294,22 +292,22 @@ function TenantLogin() {
               name="password"
               value={form.password}
               onChange={handleChange}
-              placeholder="Enter your password (National ID)"
+              placeholder="Enter your national ID"
               required
             />
           </div>
           
           <button type="submit" className="login-btn" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
         
         <div className="login-footer">
           <p>
-            Don't have an account? <a href="/">Register here</a>
+            New to RHMS? <a href="/">Create an account</a>
           </p>
-          <p>
-            Use your email and national ID as password (temporary)
+          <p style={{fontSize: '0.85rem', color: '#a0aec0'}}>
+            💡 Use your registered email and national ID as password
           </p>
         </div>
       </div>
@@ -344,7 +342,11 @@ function TenantDashboard() {
   };
 
   if (!tenantInfo) {
-    return <div className="app">Loading...</div>;
+    return (
+      <div className="app">
+        <div className="loading">Loading your dashboard...</div>
+      </div>
+    );
   }
 
   return (
@@ -353,25 +355,35 @@ function TenantDashboard() {
         <div className="dashboard-header">
           <h1>Tenant Dashboard</h1>
           <div className="tenant-info">
-            <span>Welcome, {tenantInfo.name}</span>
-            <button onClick={handleLogout} className="logout-btn">Logout</button>
+            <span>👋 Welcome, <strong>{tenantInfo.name}</strong></span>
+            <button onClick={handleLogout} className="logout-btn">Sign Out</button>
           </div>
         </div>
         
         <div className="dashboard-content">
           <div className="info-card">
-            <h3>Your Information</h3>
-            <p><strong>Name:</strong> {tenantInfo.name}</p>
-            <p><strong>House:</strong> {tenantInfo.house_number}</p>
+            <h3>🏠 Your Information</h3>
+            <p><strong>Full Name:</strong> {tenantInfo.name}</p>
+            <p><strong>House Number:</strong> {tenantInfo.house_number}</p>
             <p><strong>Email:</strong> {tenantInfo.email}</p>
             <p><strong>Phone:</strong> {tenantInfo.phone}</p>
+            <p><strong>Status:</strong> <span style={{color: '#48bb78', fontWeight: '600'}}>✅ Active Tenant</span></p>
           </div>
           
           <div className="info-card">
-            <h3>Quick Actions</h3>
-            <button className="action-btn">Make Payment</button>
-            <button className="action-btn">Submit Maintenance Request</button>
-            <button className="action-btn">View Payment History</button>
+            <h3>🚀 Quick Actions</h3>
+            <button className="action-btn">💳 Make Payment</button>
+            <button className="action-btn">🔧 Maintenance Request</button>
+            <button className="action-btn">📊 Payment History</button>
+            <button className="action-btn">📧 Contact Support</button>
+          </div>
+          
+          <div className="info-card">
+            <h3>📈 Account Summary</h3>
+            <p><strong>Current Month:</strong> {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+            <p><strong>Rent Due:</strong> <span style={{color: '#e53e3e', fontWeight: '600'}}>KSH 10,000</span></p>
+            <p><strong>Payment Status:</strong> <span style={{color: '#ed8936', fontWeight: '600'}}>⏰ Pending</span></p>
+            <p><strong>Move-in Date:</strong> {tenantInfo.move_in_date ? new Date(tenantInfo.move_in_date).toLocaleDateString() : 'Not set'}</p>
           </div>
         </div>
       </div>
