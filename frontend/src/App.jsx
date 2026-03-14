@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import './App.css?v=3';
+import './share.css';
 
 function TenantPortal() {
   const navigate = useNavigate();
@@ -323,6 +324,30 @@ function TenantPortal() {
                 <h3>🎉 Registration Successful!</h3>
                 <p>Your application has been submitted and is currently pending approval.</p>
                 <p>You will receive an email notification once your application has been reviewed.</p>
+                
+                <div className="share-section">
+                  <h4>🔗 Share Registration Link</h4>
+                  <p>Share this link with friends who need to create tenant accounts:</p>
+                  <div className="share-link-container">
+                    <input 
+                      type="text" 
+                      readOnly 
+                      value={`${window.location.origin}/register`}
+                      className="share-link-input"
+                      onClick={(e) => e.target.select()}
+                    />
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/register`);
+                        alert('Link copied to clipboard!');
+                      }}
+                      className="copy-btn"
+                    >
+                      📋 Copy Link
+                    </button>
+                  </div>
+                </div>
+                
                 <button onClick={() => window.location.reload()} className="submit-btn">
                   Submit Another Application
                 </button>
