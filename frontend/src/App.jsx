@@ -48,7 +48,7 @@ function TenantPortal() {
         }
         const data = await response.json();
         console.log('useEffect: Houses data received:', data);
-        setHouses(data.houses || []);
+        setHouses(data || []);
       } catch (error) {
         console.error('useEffect: Error fetching houses:', error);
         setHouses([]);
