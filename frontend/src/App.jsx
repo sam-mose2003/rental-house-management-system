@@ -189,14 +189,6 @@ function TenantPortal() {
     }
   };
 
-  if (loadingHouses) {
-    return (
-      <div className="app">
-        <div className="loading">Loading available houses...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="app">
       <div className="registration-container">
