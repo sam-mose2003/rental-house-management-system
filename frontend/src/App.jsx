@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 
-function App() {
+function TenantPortal() {
   const [currentView, setCurrentView] = useState('signup'); // signup, login, forgot
   const [message, setMessage] = useState(null);
   const [messageType, setMessageType] = useState('success');
@@ -723,12 +723,13 @@ function TenantDashboard() {
   );
 }
 
-function App() {
+// Router wrapper component
+function AppRouter() {
   return (
     <Router>
       <div className="app">
         <Routes>
-          <Route path="/" element={<RegistrationForm />} />
+          <Route path="/" element={<TenantPortal />} />
           <Route path="/login" element={<TenantLogin />} />
           <Route path="/dashboard" element={<TenantDashboard />} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -738,4 +739,4 @@ function App() {
   );
 }
 
-export default App;
+export default AppRouter;
