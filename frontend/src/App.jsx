@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 
-function RegistrationForm() {
-  const [houses, setHouses] = useState([]);
+function App() {
+  const [currentView, setCurrentView] = useState('signup'); // signup, login, forgot
+  const [message, setMessage] = useState(null);
+  const [messageType, setMessageType] = useState('success');
   const [loadingHouses, setLoadingHouses] = useState(true);
+  const [houses, setHouses] = useState([]);
   const [form, setForm] = useState({
     name: '',
     national_id: '',
@@ -14,9 +17,26 @@ function RegistrationForm() {
     move_in_date: '',
   });
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState(null);
-  const [messageType, setMessageType] = useState('success');
   const [registrationComplete, setRegistrationComplete] = useState(false);
+
+  // Login form state
+  const [loginForm, setLoginForm] = useState({
+    email: '',
+    password: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  // Forgot password form state
+  const [forgotForm, setForgotForm] = useState({
+    email: ''
+  });
+  const [forgotLoading, setForgotLoading] = useState(false);
+
+  const switchView = (view) => {
+    setCurrentView(view);
+    setMessage(null);
+    setMessageType('success');
+  };
 
   useEffect(() => {
     (async () => {
@@ -101,6 +121,76 @@ function RegistrationForm() {
     }
   };
 
+  const handleLoginChange = (e) => {
+    const { name, value } = e.target;
+    setLoginForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    setMessage(null);
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/tenant-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(loginForm),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('tenantInfo', JSON.stringify(data.tenant));
+        localStorage.setItem('tenantToken', data.token);
+        setMessage('Login successful! Redirecting to dashboard...', 'success');
+        setMessageType('success');
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1500);
+      } else {
+        setMessage(data.error || 'Login failed. Please check your credentials.', 'error');
+        setMessageType('error');
+      }
+    } catch (error) {
+      setMessage('Network error. Please try again.', 'error');
+      setMessageType('error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotChange = (e) => {
+    const { name, value } = e.target;
+    setForgotForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault();
+    setMessage(null);
+    setForgotLoading(true);
+
+    try {
+      // In a real app, this would send a password reset email
+      // For now, we'll just show a success message
+      setMessage(`Password reset instructions have been sent to ${forgotForm.email}. Please check your email.`, 'success');
+      setMessageType('success');
+      setForgotForm({ email: '' });
+      
+      // Switch back to login after 3 seconds
+      setTimeout(() => {
+        switchView('login');
+      }, 3000);
+    } catch (error) {
+      setMessage('Network error. Please try again.', 'error');
+      setMessageType('error');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
   if (loadingHouses) {
     return (
       <div className="app">
@@ -113,7 +203,29 @@ function RegistrationForm() {
     <div className="app">
       <div className="registration-container">
         <h1>RHMS</h1>
-        <h2>Tenant Registration Portal</h2>
+        <h2>Tenant Portal</h2>
+        
+        {/* View Switcher */}
+        <div className="view-switcher">
+          <button 
+            className={`view-btn ${currentView === 'signup' ? 'active' : ''}`}
+            onClick={() => switchView('signup')}
+          >
+            Sign Up
+          </button>
+          <button 
+            className={`view-btn ${currentView === 'login' ? 'active' : ''}`}
+            onClick={() => switchView('login')}
+          >
+            Login
+          </button>
+          <button 
+            className={`view-btn ${currentView === 'forgot' ? 'active' : ''}`}
+            onClick={() => switchView('forgot')}
+          >
+            Forgot Password
+          </button>
+        </div>
         
         {message && (
           <div className={`message ${messageType}`}>
@@ -121,8 +233,12 @@ function RegistrationForm() {
           </div>
         )}
 
-        {!registrationComplete ? (
-          <form onSubmit={handleSubmit} className="registration-form">
+        {/* Sign Up View */}
+        {currentView === 'signup' && (
+          <>
+            {!registrationComplete ? (
+              <form onSubmit={handleSubmit} className="registration-form">
+                <h3>Create Account</h3>
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="name">Full Name</label>
@@ -227,6 +343,93 @@ function RegistrationForm() {
               Submit Another Application
             </button>
           </div>
+        )}
+          </>
+        )}
+
+        {/* Login View */}
+        {currentView === 'login' && (
+          <form onSubmit={handleLoginSubmit} className="registration-form">
+            <h3>Welcome Back</h3>
+            <div className="form-group">
+              <label htmlFor="email">Email Address</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={loginForm.email}
+                onChange={handleLoginChange}
+                placeholder="your@email.com"
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="password">Password (National ID)</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={loginForm.password}
+                onChange={handleLoginChange}
+                placeholder="Enter your national ID"
+                required
+              />
+            </div>
+
+            <button type="submit" className="submit-btn" disabled={loading}>
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+            
+            <div className="form-footer">
+              <p>
+                Don't have an account? 
+                <button type="button" className="link-btn" onClick={() => switchView('signup')}>
+                  Sign up here
+                </button>
+              </p>
+              <p>
+                <button type="button" className="link-btn" onClick={() => switchView('forgot')}>
+                  Forgot password?
+                </button>
+              </p>
+            </div>
+          </form>
+        )}
+
+        {/* Forgot Password View */}
+        {currentView === 'forgot' && (
+          <form onSubmit={handleForgotSubmit} className="registration-form">
+            <h3>Reset Password</h3>
+            <p className="form-description">
+              Enter your email address and we'll send you instructions to reset your password.
+            </p>
+            
+            <div className="form-group">
+              <label htmlFor="email">Email Address</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={forgotForm.email}
+                onChange={handleForgotChange}
+                placeholder="your@email.com"
+                required
+              />
+            </div>
+
+            <button type="submit" className="submit-btn" disabled={forgotLoading}>
+              {forgotLoading ? 'Sending...' : 'Send Reset Instructions'}
+            </button>
+            
+            <div className="form-footer">
+              <p>
+                <button type="button" className="link-btn" onClick={() => switchView('login')}>
+                  Back to login
+                </button>
+              </p>
+            </div>
+          </form>
         )}
       </div>
     </div>
