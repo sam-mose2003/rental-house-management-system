@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import './App.css?v=3';
 
 function TenantPortal() {
+  const navigate = useNavigate();
   const [currentView, setCurrentView] = useState('signup'); // signup, login, forgot
   const [message, setMessage] = useState(null);
   const [messageType, setMessageType] = useState('success');
@@ -160,7 +161,7 @@ function TenantPortal() {
         localStorage.setItem('tenant', JSON.stringify(data.tenant));
         localStorage.setItem('token', data.token);
         setTimeout(() => {
-          window.location.href = '/dashboard';
+          navigate('/dashboard');
         }, 1500);
       } else {
         setMessage(data.error || 'Login failed. Please try again.');
@@ -444,6 +445,7 @@ function TenantPortal() {
 }
 
 function TenantLogin() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     email: '',
     password: ''
@@ -475,7 +477,7 @@ function TenantLogin() {
       if (response.ok) {
         localStorage.setItem('tenant', JSON.stringify(data.tenant));
         localStorage.setItem('token', data.token);
-        window.location.href = '/dashboard';
+        navigate('/dashboard');
       } else {
         setMessage(data.error || 'Login failed. Please try again.');
       }
@@ -530,6 +532,7 @@ function TenantLogin() {
 }
 
 function TenantDashboard() {
+  const navigate = useNavigate();
   const [tenantInfo, setTenantInfo] = useState(null);
   const [applicationStatus, setApplicationStatus] = useState('pending');
 
@@ -541,10 +544,10 @@ function TenantDashboard() {
         setTenantInfo(tenant);
         setApplicationStatus(tenant.status || 'pending');
       } catch (error) {
-        window.location.href = '/login';
+        navigate('/login');
       }
     } else {
-      window.location.href = '/login';
+      navigate('/login');
     }
   }, []);
 
@@ -575,12 +578,12 @@ function TenantDashboard() {
   const handleLogout = () => {
     localStorage.removeItem('tenant');
     localStorage.removeItem('token');
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   const handleUpdateApplication = () => {
     // Navigate to update form
-    window.location.href = '/login';
+    navigate('/');
   };
 
   const handleContactSupport = () => {
@@ -595,7 +598,7 @@ function TenantDashboard() {
 
   const handleMakePayment = () => {
     // Navigate to payment page
-    window.location.href = '/login';
+    navigate('/');
   };
 
   if (!tenantInfo) {
