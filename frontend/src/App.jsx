@@ -4,7 +4,7 @@ import './App.css?v=3';
 
 function TenantPortal() {
   const navigate = useNavigate();
-  const [currentView, setCurrentView] = useState('signup'); // signup, login, forgot
+  const [currentView, setCurrentView] = useState('signup');
   const [message, setMessage] = useState(null);
   const [messageType, setMessageType] = useState('success');
   const [loadingHouses, setLoadingHouses] = useState(true);
@@ -20,14 +20,12 @@ function TenantPortal() {
   const [submitting, setSubmitting] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
 
-  // Login form state
   const [loginForm, setLoginForm] = useState({
     email: '',
     password: ''
   });
   const [loading, setLoading] = useState(false);
 
-  // Forgot password form state
   const [forgotForm, setForgotForm] = useState({
     email: ''
   });
@@ -41,17 +39,15 @@ function TenantPortal() {
 
   useEffect(() => {
     (async () => {
-      console.log('useEffect: Starting to fetch vacant houses...');
       try {
         const response = await fetch('http://localhost:5000/api/houses?vacant=1');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        console.log('useEffect: Houses data received:', data);
         setHouses(data || []);
       } catch (error) {
-        console.error('useEffect: Error fetching houses:', error);
+        console.error('Error fetching houses:', error);
         setHouses([]);
       } finally {
         setLoadingHouses(false);
@@ -59,20 +55,19 @@ function TenantPortal() {
     })();
   }, []);
 
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
-    // Phone validation: numbers only, exactly 10 digits
-    if (name === 'phone') {
-      const phoneOnly = value.replace(/\D/g, '');
-      if (phoneOnly.length <= 10) {
-        setForm((prev) => ({ ...prev, [name]: phoneOnly }));
-      }
-      return;
-    }
-    
-    // National ID validation: numbers only, 8-12 digits
-    if (name === 'national_id') {
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleLoginChange = (e) => {
+    const { name, value } = e.target;
+    setLoginForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleForgotChange = (e) => {
+    const { name, value } = e.target;
+    setForgotForm(prev => ({ ...prev, [name]: value }));
       const idOnly = value.replace(/\D/g, '');
       if (idOnly.length <= 12) {
         setForm((prev) => ({ ...prev, [name]: idOnly }));
@@ -112,19 +107,8 @@ function TenantPortal() {
           move_in_date: '',
         });
       } else {
-        // Check if it's a duplicate email error
-        if (data.error && data.error.includes('already exists')) {
-          setMessage('You already have an account! Redirecting to login...', 'error');
-          setMessageType('error');
-          setTimeout(() => {
-            switchView('login');
-            // Pre-fill the login form with the email
-            setLoginForm(prev => ({ ...prev, email: form.email }));
-          }, 2000);
-        } else {
-          setMessage(data.error || 'Registration failed. Please try again.');
-          setMessageType('error');
-        }
+        setMessage(data.error || 'Registration failed. Please try again.');
+        setMessageType('error');
       }
     } catch (err) {
       setMessage('Network error. Please try again.');
@@ -565,15 +549,10 @@ function TenantDashboard() {
 
   const fetchMaintenanceRequests = async () => {
     try {
-      console.log('Fetching maintenance requests for tenant:', tenantInfo.name);
       const response = await fetch(`http://localhost:5000/api/tenant-maintenance/${encodeURIComponent(tenantInfo.name)}`);
-      console.log('Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Raw maintenance data:', data);
-        
-        // Format the data to ensure proper structure
         const formattedRequests = data.map(request => ({
           id: request[0],
           issue: request[1],
@@ -581,7 +560,6 @@ function TenantDashboard() {
           created_at: request[3],
           house_number: request[4] || tenantInfo.house_number
         }));
-        console.log('Formatted maintenance requests:', formattedRequests);
         setMaintenanceRequests(formattedRequests);
       } else {
         const errorData = await response.json();
@@ -596,21 +574,16 @@ function TenantDashboard() {
 
   const fetchPayments = async () => {
     try {
-      console.log('Fetching payments for tenant ID:', tenantInfo.id);
       const response = await fetch(`http://localhost:5000/api/tenant-payments/${tenantInfo.id}`);
-      console.log('Payments response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Raw payments data:', data);
         setPayments(data);
       } else {
         const errorData = await response.json();
-        console.error('Payments API Error:', errorData);
         setPayments([]);
       }
     } catch (error) {
-      console.error('Error fetching payments:', error);
       setPayments([]);
     }
   };
