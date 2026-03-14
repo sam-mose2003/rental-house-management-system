@@ -653,8 +653,10 @@ function TenantDashboard() {
         },
         body: JSON.stringify({
           tenant_id: tenantInfo.id,
+          tenant: tenantInfo.name,
           issue: issue,
-          house_number: houseNumber
+          house_number: houseNumber,
+          priority: 'Normal'
         }),
       });
 
@@ -692,7 +694,7 @@ function TenantDashboard() {
           tenant_id: tenantInfo.id,
           amount: amount,
           payment_method: paymentMethod,
-          payment_type: paymentType
+          payment_date: new Date().toISOString().split('T')[0]
         }),
       });
 
