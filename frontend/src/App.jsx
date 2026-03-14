@@ -1026,6 +1026,7 @@ function TenantDashboard() {
                   <option value="Cash">Cash</option>
                   <option value="Bank Transfer">Bank Transfer</option>
                   <option value="Mobile Money">Mobile Money</option>
+                  <option value="M-Pesa">M-Pesa</option>
                 </select>
               </div>
               <div className="form-actions">
