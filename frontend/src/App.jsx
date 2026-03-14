@@ -596,13 +596,22 @@ function TenantDashboard() {
 
   const fetchPayments = async () => {
     try {
+      console.log('Fetching payments for tenant ID:', tenantInfo.id);
       const response = await fetch(`http://localhost:5000/api/tenant-payments/${tenantInfo.id}`);
+      console.log('Payments response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Raw payments data:', data);
         setPayments(data);
+      } else {
+        const errorData = await response.json();
+        console.error('Payments API Error:', errorData);
+        setPayments([]);
       }
     } catch (error) {
       console.error('Error fetching payments:', error);
+      setPayments([]);
     }
   };
 
