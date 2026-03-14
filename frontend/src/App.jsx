@@ -42,7 +42,7 @@ function TenantPortal() {
     (async () => {
       console.log('useEffect: Starting to fetch vacant houses...');
       try {
-        const response = await fetch('http://localhost:5000/api/houses');
+        const response = await fetch('http://localhost:5000/api/houses?vacant=1');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
