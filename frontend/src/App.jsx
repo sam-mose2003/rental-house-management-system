@@ -565,7 +565,7 @@ function TenantDashboard() {
 
   const fetchMaintenanceRequests = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/tenant-maintenance/${tenantInfo.id}`);
+      const response = await fetch(`http://localhost:5000/api/tenant-maintenance/${encodeURIComponent(tenantInfo.name)}`);
       if (response.ok) {
         const data = await response.json();
         // Format the data to ensure proper structure
