@@ -23,19 +23,46 @@ body {
 
 /* Registration Container */
 .registration-container {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 24px;
-  padding: 3rem;
-  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15), 
-              0 15px 35px rgba(0, 0, 0, 0.1),
-              inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(25px);
+  border-radius: 20px;
+  padding: 2.5rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08), 
+              0 8px 25px rgba(0, 0, 0, 0.06),
+              inset 0 1px 0 rgba(255, 255, 255, 0.8);
   width: 100%;
-  max-width: 500px;
-  text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  max-width: 480px;
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.5);
   position: relative;
   overflow: hidden;
+}
+
+.registration-container h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+}
+
+.registration-container h2 {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.registration-container h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: #1e293b;
+  text-align: center;
 }
 
 .registration-container::before {
@@ -75,13 +102,13 @@ body {
 .registration-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 .form-group {
@@ -90,6 +117,33 @@ body {
 }
 
 .form-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  text-align: left;
+}
+
+.form-group input,
+.form-group select {
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  transition: all 0.2s ease;
+  background: #ffffff;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group input::placeholder {
+  color: #9ca3af;
+}
   font-weight: 600;
   color: #4a5568;
   margin-bottom: 0.5rem;
@@ -130,15 +184,14 @@ body {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  padding: 1.2rem 2rem;
-  border-radius: 12px;
-  font-size: 1.1rem;
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   margin-top: 1rem;
-  position: relative;
-  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.25);
 }
 
 .submit-btn::before {
@@ -152,13 +205,9 @@ body {
   transition: left 0.5s ease;
 }
 
-.submit-btn:hover::before {
-  left: 100%;
-}
-
-.submit-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
 }
 
 .submit-btn:disabled {
@@ -721,29 +770,31 @@ body {
   margin-top: 1.5rem;
   text-align: center;
   padding-top: 1rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid #e5e7eb;
 }
 
 .form-footer p {
   margin: 0.5rem 0;
-  color: #666;
-  font-size: 0.9rem;
+  color: #6b7280;
+  font-size: 0.875rem;
 }
 
 .link-btn {
   background: none;
   border: none;
   color: #667eea;
-  text-decoration: underline;
+  text-decoration: none;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 500;
   padding: 0;
   margin: 0 0.25rem;
-  transition: color 0.3s ease;
+  transition: color 0.2s ease;
 }
 
 .link-btn:hover {
   color: #764ba2;
+  text-decoration: underline;
 }
 
 /* Form Description */
