@@ -711,7 +711,6 @@ function TenantDashboard() {
     const formData = new FormData(e.target);
     const amount = formData.get('amount');
     const paymentMethod = formData.get('payment_method');
-    const paymentType = formData.get('payment_type');
     
     try {
       const response = await fetch('http://localhost:5000/api/tenant-payment', {
@@ -730,7 +729,8 @@ function TenantDashboard() {
       if (response.ok) {
         alert('Payment submitted successfully!');
         setShowPaymentForm(false);
-        fetchPayments();
+        // Refresh the payments to show the new one
+        await fetchPayments();
       } else {
         const data = await response.json();
         alert(data.error || 'Failed to submit payment');
@@ -905,16 +905,20 @@ function TenantDashboard() {
                 payments.map((payment, index) => (
                   <div key={index} className="payment-item">
                     <div className="payment-header">
-                      <span className="payment-amount">${payment.amount}</span>
-                      <span className="payment-method">{payment.payment_method}</span>
+                      <span className="payment-amount">KSH {payment[1]?.toLocaleString() || '0'}</span>
+                      <span className="payment-method">{payment[3] || 'Unknown'}</span>
                     </div>
                     <div className="payment-date">
-                      {new Date(payment.payment_date).toLocaleDateString()}
+                      {payment[2] ? new Date(payment[2]).toLocaleDateString() : 'Unknown date'}
                     </div>
                   </div>
                 ))
               ) : (
-                <p>No payments found.</p>
+                <div className="empty-state">
+                  <div className="empty-icon">💳</div>
+                  <p>No payments found.</p>
+                  <p className="empty-subtitle">Submit a payment to track your payment history here.</p>
+                </div>
               )}
             </div>
             <button 
@@ -1005,34 +1009,23 @@ function TenantDashboard() {
             </div>
             <form onSubmit={handlePaymentSubmit}>
               <div className="form-group">
-                <label>Payment Amount ($)</label>
+                <label>Payment Amount (KSH)</label>
                 <input 
                   type="number" 
                   name="amount" 
                   required 
                   min="1" 
-                  step="0.01"
-                  placeholder="Enter amount"
+                  step="1"
+                  placeholder="Enter amount in KSH"
                 />
               </div>
               <div className="form-group">
                 <label>Payment Method</label>
                 <select name="payment_method" required>
                   <option value="">Select payment method</option>
-                  <option value="Credit Card">Credit Card</option>
-                  <option value="Debit Card">Debit Card</option>
-                  <option value="Bank Transfer">Bank Transfer</option>
                   <option value="Cash">Cash</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Payment Type</label>
-                <select name="payment_type" required>
-                  <option value="">Select payment type</option>
-                  <option value="Rent">Rent</option>
-                  <option value="Maintenance">Maintenance</option>
-                  <option value="Utilities">Utilities</option>
-                  <option value="Other">Other</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Mobile Money">Mobile Money</option>
                 </select>
               </div>
               <div className="form-actions">
