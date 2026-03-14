@@ -910,36 +910,53 @@ body {
 .maintenance-item {
   background: rgba(249, 250, 251, 0.5);
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 1rem;
-  transition: all 0.2s ease;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .maintenance-item:hover {
   background: rgba(243, 244, 246, 0.8);
   border-color: #d1d5db;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
 .maintenance-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.maintenance-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .maintenance-id {
-  font-weight: 600;
+  font-weight: 700;
   color: #1e293b;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
+}
+
+.maintenance-house {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
 }
 
 .maintenance-status {
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+  padding: 0.4rem 0.8rem;
+  border-radius: 16px;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .maintenance-status.status-open {
@@ -957,15 +974,90 @@ body {
   color: white;
 }
 
-.maintenance-issue {
-  color: #4a5568;
-  line-height: 1.5;
-  margin-bottom: 0.5rem;
+.maintenance-status.status-in-progress {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
 }
 
-.maintenance-date {
-  font-size: 0.875rem;
+.maintenance-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.maintenance-issue {
+  color: #374151;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  border-left: 3px solid #667eea;
+}
+
+.maintenance-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.timeline-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.timeline-item.resolved {
+  background: rgba(34, 197, 94, 0.1);
+  border-left: 2px solid #22c55e;
+}
+
+.timeline-item.in-progress {
+  background: rgba(59, 130, 246, 0.1);
+  border-left: 2px solid #3b82f6;
+}
+
+.timeline-date {
   color: #64748b;
+  font-weight: 500;
+}
+
+.timeline-label {
+  color: #374151;
+  font-weight: 600;
+}
+
+.timeline-status {
+  color: #059669;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #64748b;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+.empty-state p {
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.empty-subtitle {
+  font-size: 0.9rem;
+  opacity: 0.8;
 }
 
 /* Payment List Styles */

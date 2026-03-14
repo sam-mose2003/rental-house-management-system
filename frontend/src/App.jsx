@@ -568,7 +568,15 @@ function TenantDashboard() {
       const response = await fetch(`http://localhost:5000/api/tenant-maintenance/${tenantInfo.id}`);
       if (response.ok) {
         const data = await response.json();
-        setMaintenanceRequests(data);
+        // Format the data to ensure proper structure
+        const formattedRequests = data.map(request => ({
+          id: request[0],
+          issue: request[1],
+          status: request[2],
+          created_at: request[3],
+          house_number: request[4] || tenantInfo.house_number
+        }));
+        setMaintenanceRequests(formattedRequests);
       }
     } catch (error) {
       console.error('Error fetching maintenance requests:', error);
@@ -663,7 +671,8 @@ function TenantDashboard() {
       if (response.ok) {
         alert('Maintenance request submitted successfully!');
         setShowMaintenanceForm(false);
-        fetchMaintenanceRequests();
+        // Refresh the maintenance requests to show the new one
+        await fetchMaintenanceRequests();
       } else {
         const data = await response.json();
         alert(data.error || 'Failed to submit maintenance request');
@@ -818,19 +827,45 @@ function TenantDashboard() {
                 maintenanceRequests.map((request) => (
                   <div key={request.id} className="maintenance-item">
                     <div className="maintenance-header">
-                      <span className="maintenance-id">#{request.id}</span>
+                      <div className="maintenance-meta">
+                        <span className="maintenance-id">Request #{request.id}</span>
+                        <span className="maintenance-house">House {request.house_number}</span>
+                      </div>
                       <span className={`maintenance-status status-${request.status.toLowerCase()}`}>
                         {request.status}
                       </span>
                     </div>
-                    <div className="maintenance-issue">{request.issue}</div>
-                    <div className="maintenance-date">
-                      {new Date(request.created_at).toLocaleDateString()}
+                    <div className="maintenance-content">
+                      <div className="maintenance-issue">{request.issue}</div>
+                      <div className="maintenance-timeline">
+                        <div className="timeline-item">
+                          <span className="timeline-date">
+                            {new Date(request.created_at).toLocaleDateString()}
+                          </span>
+                          <span className="timeline-label">Submitted</span>
+                        </div>
+                        {request.status === 'Resolved' && (
+                          <div className="timeline-item resolved">
+                            <span className="timeline-label">Resolved</span>
+                            <span className="timeline-status">✓ Completed</span>
+                          </div>
+                        )}
+                        {request.status === 'In Progress' && (
+                          <div className="timeline-item in-progress">
+                            <span className="timeline-label">In Progress</span>
+                            <span className="timeline-status">🔧 Working on it</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))
               ) : (
-                <p>No maintenance requests found.</p>
+                <div className="empty-state">
+                  <div className="empty-icon">🔧</div>
+                  <p>No maintenance requests found.</p>
+                  <p className="empty-subtitle">Submit a request to track its progress here.</p>
+                </div>
               )}
             </div>
             <button 
@@ -838,7 +873,7 @@ function TenantDashboard() {
               className="action-btn"
               style={{ marginTop: '1rem', width: '100%' }}
             >
-              🔧 Submit Maintenance Request
+              🔧 Submit New Request
             </button>
           </div>
 
