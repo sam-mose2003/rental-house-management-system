@@ -110,8 +110,19 @@ function TenantPortal() {
           move_in_date: '',
         });
       } else {
-        setMessage(data.error || 'Registration failed. Please try again.');
-        setMessageType('error');
+        // Check if it's a duplicate email error
+        if (data.error && data.error.includes('already exists')) {
+          setMessage('You already have an account! Redirecting to login...', 'error');
+          setMessageType('error');
+          setTimeout(() => {
+            switchView('login');
+            // Pre-fill the login form with the email
+            setLoginForm(prev => ({ ...prev, email: form.email }));
+          }, 2000);
+        } else {
+          setMessage(data.error || 'Registration failed. Please try again.');
+          setMessageType('error');
+        }
       }
     } catch (err) {
       setMessage('Network error. Please try again.');
@@ -204,28 +215,6 @@ function TenantPortal() {
       <div className="registration-container">
         <h1>RHMS</h1>
         <h2>Tenant Portal</h2>
-        
-        {/* View Switcher */}
-        <div className="view-switcher">
-          <button 
-            className={`view-btn ${currentView === 'signup' ? 'active' : ''}`}
-            onClick={() => switchView('signup')}
-          >
-            Sign Up
-          </button>
-          <button 
-            className={`view-btn ${currentView === 'login' ? 'active' : ''}`}
-            onClick={() => switchView('login')}
-          >
-            Login
-          </button>
-          <button 
-            className={`view-btn ${currentView === 'forgot' ? 'active' : ''}`}
-            onClick={() => switchView('forgot')}
-          >
-            Forgot Password
-          </button>
-        </div>
         
         {message && (
           <div className={`message ${messageType}`}>
@@ -331,8 +320,17 @@ function TenantPortal() {
             </div>
 
             <button type="submit" className="submit-btn" disabled={submitting}>
-              {submitting ? 'Submitting Application...' : 'Complete Registration'}
+              {submitting ? 'Creating Account...' : 'Sign Up'}
             </button>
+            
+            <div className="form-footer">
+              <p>
+                Already have an account? 
+                <button type="button" className="link-btn" onClick={() => switchView('login')}>
+                  Login here
+                </button>
+              </p>
+            </div>
           </form>
         ) : (
           <div className="success-message">
@@ -342,6 +340,14 @@ function TenantPortal() {
             <button onClick={() => window.location.reload()} className="submit-btn">
               Submit Another Application
             </button>
+            <div className="form-footer">
+              <p>
+                Already have an account? 
+                <button type="button" className="link-btn" onClick={() => switchView('login')}>
+                  Login here
+                </button>
+              </p>
+            </div>
           </div>
         )}
           </>

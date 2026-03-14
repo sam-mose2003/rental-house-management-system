@@ -82,22 +82,6 @@ body {
   50% { background-position: 100% 50%; }
 }
 
-.registration-container h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #2d3748;
-  margin-bottom: 0.5rem;
-  text-align: center;
-}
-
-.registration-container h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #4a5568;
-  margin-bottom: 2rem;
-  text-align: center;
-}
-
 /* Form Styles */
 .registration-form {
   display: flex;
@@ -166,17 +150,6 @@ body {
   transition: all 0.2s ease;
   margin-top: 1rem;
   box-shadow: 0 4px 14px rgba(102, 126, 234, 0.25);
-}
-
-.submit-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
 }
 
 .submit-btn:hover:not(:disabled) {
