@@ -565,9 +565,23 @@ function TenantDashboard() {
 
   const fetchMaintenanceRequests = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/tenant-maintenance/${encodeURIComponent(tenantInfo.name)}`);
+      console.log('Fetching maintenance requests for tenant:', tenantInfo.name, 'ID:', tenantInfo.id);
+      
+      // Try with tenant name first
+      let response = await fetch(`http://localhost:5000/api/tenant-maintenance/${encodeURIComponent(tenantInfo.name)}`);
+      console.log('Response status (name):', response.status);
+      
+      if (!response.ok) {
+        // Fallback: try with tenant ID
+        console.log('Trying with tenant ID instead...');
+        response = await fetch(`http://localhost:5000/api/tenant-maintenance/${tenantInfo.id}`);
+        console.log('Response status (ID):', response.status);
+      }
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Raw maintenance data:', data);
+        
         // Format the data to ensure proper structure
         const formattedRequests = data.map(request => ({
           id: request[0],
@@ -576,10 +590,16 @@ function TenantDashboard() {
           created_at: request[3],
           house_number: request[4] || tenantInfo.house_number
         }));
+        console.log('Formatted maintenance requests:', formattedRequests);
         setMaintenanceRequests(formattedRequests);
+      } else {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        setMaintenanceRequests([]);
       }
     } catch (error) {
       console.error('Error fetching maintenance requests:', error);
+      setMaintenanceRequests([]);
     }
   };
 
