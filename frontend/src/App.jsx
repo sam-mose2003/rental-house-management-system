@@ -565,18 +565,9 @@ function TenantDashboard() {
 
   const fetchMaintenanceRequests = async () => {
     try {
-      console.log('Fetching maintenance requests for tenant:', tenantInfo.name, 'ID:', tenantInfo.id);
-      
-      // Try with tenant name first
-      let response = await fetch(`http://localhost:5000/api/tenant-maintenance/${encodeURIComponent(tenantInfo.name)}`);
-      console.log('Response status (name):', response.status);
-      
-      if (!response.ok) {
-        // Fallback: try with tenant ID
-        console.log('Trying with tenant ID instead...');
-        response = await fetch(`http://localhost:5000/api/tenant-maintenance/${tenantInfo.id}`);
-        console.log('Response status (ID):', response.status);
-      }
+      console.log('Fetching maintenance requests for tenant:', tenantInfo.name);
+      const response = await fetch(`http://localhost:5000/api/tenant-maintenance/${encodeURIComponent(tenantInfo.name)}`);
+      console.log('Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();

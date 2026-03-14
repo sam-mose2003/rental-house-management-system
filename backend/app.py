@@ -611,8 +611,8 @@ def api_get_tenant_payments():
         return jsonify({"error": "Could not fetch payments"}), 500
 
 
-@app.route('/api/tenant-maintenance/<int:tenant_id>', methods=['GET'])
-def api_get_tenant_maintenance():
+@app.route('/api/tenant-maintenance/<string:tenant_name>', methods=['GET'])
+def api_get_tenant_maintenance(tenant_name):
     """Get maintenance requests for specific tenant"""
     try:
         cur = get_cursor()
@@ -621,7 +621,7 @@ def api_get_tenant_maintenance():
             FROM maintenance 
             WHERE tenant = %s 
             ORDER BY created_at DESC
-        """, (tenant_id,))
+        """, (tenant_name,))
         requests = cur.fetchall()
         cur.close()
         return jsonify(requests)
