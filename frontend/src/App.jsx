@@ -535,6 +535,11 @@ function TenantDashboard() {
   const navigate = useNavigate();
   const [tenantInfo, setTenantInfo] = useState(null);
   const [applicationStatus, setApplicationStatus] = useState('pending');
+  const [maintenanceRequests, setMaintenanceRequests] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [showMaintenanceForm, setShowMaintenanceForm] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const storedTenant = localStorage.getItem('tenant');
@@ -550,6 +555,37 @@ function TenantDashboard() {
       navigate('/login');
     }
   }, []);
+
+  useEffect(() => {
+    if (tenantInfo) {
+      fetchMaintenanceRequests();
+      fetchPayments();
+    }
+  }, [tenantInfo]);
+
+  const fetchMaintenanceRequests = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/tenant-maintenance/${tenantInfo.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setMaintenanceRequests(data);
+      }
+    } catch (error) {
+      console.error('Error fetching maintenance requests:', error);
+    }
+  };
+
+  const fetchPayments = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/tenant-payments/${tenantInfo.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setPayments(data);
+      }
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -599,6 +635,80 @@ function TenantDashboard() {
   const handleMakePayment = () => {
     // Navigate to payment page
     navigate('/');
+  };
+
+  const handleMaintenanceSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    const formData = new FormData(e.target);
+    const issue = formData.get('issue');
+    const houseNumber = formData.get('house_number');
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/maintenance-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tenant_id: tenantInfo.id,
+          issue: issue,
+          house_number: houseNumber
+        }),
+      });
+
+      if (response.ok) {
+        alert('Maintenance request submitted successfully!');
+        setShowMaintenanceForm(false);
+        fetchMaintenanceRequests();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to submit maintenance request');
+      }
+    } catch (error) {
+      alert('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    const formData = new FormData(e.target);
+    const amount = formData.get('amount');
+    const paymentMethod = formData.get('payment_method');
+    const paymentType = formData.get('payment_type');
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/tenant-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tenant_id: tenantInfo.id,
+          amount: amount,
+          payment_method: paymentMethod,
+          payment_type: paymentType
+        }),
+      });
+
+      if (response.ok) {
+        alert('Payment submitted successfully!');
+        setShowPaymentForm(false);
+        fetchPayments();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to submit payment');
+      }
+    } catch (error) {
+      alert('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!tenantInfo) {
@@ -698,6 +808,67 @@ function TenantDashboard() {
             </div>
           </div>
 
+          {/* Maintenance Requests Card */}
+          <div className="info-card">
+            <h3>Maintenance Requests</h3>
+            <div className="maintenance-list">
+              {maintenanceRequests.length > 0 ? (
+                maintenanceRequests.map((request) => (
+                  <div key={request.id} className="maintenance-item">
+                    <div className="maintenance-header">
+                      <span className="maintenance-id">#{request.id}</span>
+                      <span className={`maintenance-status status-${request.status.toLowerCase()}`}>
+                        {request.status}
+                      </span>
+                    </div>
+                    <div className="maintenance-issue">{request.issue}</div>
+                    <div className="maintenance-date">
+                      {new Date(request.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p>No maintenance requests found.</p>
+              )}
+            </div>
+            <button 
+              onClick={() => setShowMaintenanceForm(true)} 
+              className="action-btn"
+              style={{ marginTop: '1rem', width: '100%' }}
+            >
+              🔧 Submit Maintenance Request
+            </button>
+          </div>
+
+          {/* Payments Card */}
+          <div className="info-card">
+            <h3>Payment History</h3>
+            <div className="payment-list">
+              {payments.length > 0 ? (
+                payments.map((payment, index) => (
+                  <div key={index} className="payment-item">
+                    <div className="payment-header">
+                      <span className="payment-amount">${payment.amount}</span>
+                      <span className="payment-method">{payment.payment_method}</span>
+                    </div>
+                    <div className="payment-date">
+                      {new Date(payment.payment_date).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p>No payments found.</p>
+              )}
+            </div>
+            <button 
+              onClick={() => setShowPaymentForm(true)} 
+              className="action-btn"
+              style={{ marginTop: '1rem', width: '100%' }}
+            >
+              💳 Make Payment
+            </button>
+          </div>
+
           {/* Quick Actions Card */}
           <div className="actions-card">
             <h3>Quick Actions</h3>
@@ -718,6 +889,107 @@ function TenantDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Maintenance Request Modal */}
+      {showMaintenanceForm && (
+        <div className="modal-overlay" onClick={() => setShowMaintenanceForm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Submit Maintenance Request</h3>
+              <button 
+                className="modal-close" 
+                onClick={() => setShowMaintenanceForm(false)}
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleMaintenanceSubmit}>
+              <div className="form-group">
+                <label>House Number</label>
+                <select name="house_number" required>
+                  <option value="">Select your house</option>
+                  <option value={tenantInfo.house_number}>{tenantInfo.house_number}</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Issue Description</label>
+                <textarea 
+                  name="issue" 
+                  required 
+                  placeholder="Describe the maintenance issue..."
+                  rows="4"
+                />
+              </div>
+              <div className="form-actions">
+                <button type="button" onClick={() => setShowMaintenanceForm(false)}>
+                  Cancel
+                </button>
+                <button type="submit" disabled={loading}>
+                  {loading ? 'Submitting...' : 'Submit Request'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Modal */}
+      {showPaymentForm && (
+        <div className="modal-overlay" onClick={() => setShowPaymentForm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Make Payment</h3>
+              <button 
+                className="modal-close" 
+                onClick={() => setShowPaymentForm(false)}
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handlePaymentSubmit}>
+              <div className="form-group">
+                <label>Payment Amount ($)</label>
+                <input 
+                  type="number" 
+                  name="amount" 
+                  required 
+                  min="1" 
+                  step="0.01"
+                  placeholder="Enter amount"
+                />
+              </div>
+              <div className="form-group">
+                <label>Payment Method</label>
+                <select name="payment_method" required>
+                  <option value="">Select payment method</option>
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="Debit Card">Debit Card</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Cash">Cash</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Payment Type</label>
+                <select name="payment_type" required>
+                  <option value="">Select payment type</option>
+                  <option value="Rent">Rent</option>
+                  <option value="Maintenance">Maintenance</option>
+                  <option value="Utilities">Utilities</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div className="form-actions">
+                <button type="button" onClick={() => setShowPaymentForm(false)}>
+                  Cancel
+                </button>
+                <button type="submit" disabled={loading}>
+                  {loading ? 'Processing...' : 'Submit Payment'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
