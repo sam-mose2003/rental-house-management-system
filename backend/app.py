@@ -1,8 +1,24 @@
-from flask import Flask, flash, jsonify, render_template, request, redirect, url_for, session
-from flask_mysqldb import MySQL
-from flask_cors import CORS
 import MySQLdb
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask_mysqldb import MySQL
 import hashlib
+import time
+import os
+import base64
+import requests
+from flask_cors import CORS
+try:
+    from mpesa_config import *
+except ImportError:
+    # Fallback values if config file doesn't exist
+    MPESA_CONSUMER_KEY = "YOUR_CONSUMER_KEY_HERE"
+    MPESA_CONSUMER_SECRET = "YOUR_CONSUMER_SECRET_HERE"
+    MPESA_PASSKEY = "YOUR_PASSKEY_HERE"
+    MPESA_SHORTCODE = "6013828"
+    MPESA_CALLBACK_URL = "http://localhost:5000/mpesa-callback"
+    MPESA_ENVIRONMENT = "sandbox"
+    MPESA_OAUTH_URL = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+    MPESA_STK_URL = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
 
 app = Flask(__name__)
 app.secret_key = 'rhms_secret_key'
@@ -20,18 +36,111 @@ CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "http://12
 # Allow all origins for development
 CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5176", "http://127.0.0.1:5176", "*"], supports_credentials=True)
 
+def get_mpesa_access_token():
+    """Get M-Pesa access token from Daraja API"""
+    try:
+        credentials = f"{MPESA_CONSUMER_KEY}:{MPESA_CONSUMER_SECRET}"
+        encoded_credentials = base64.b64encode(credentials.encode()).decode()
+        
+        headers = {
+            "Authorization": f"Basic {encoded_credentials}",
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.get(MPESA_OAUTH_URL, headers=headers)
+        if response.status_code == 200:
+            return response.json().get("access_token")
+        else:
+            print(f"Failed to get M-Pesa access token: {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"Error getting M-Pesa access token: {str(e)}")
+        return None
+
+def lipa_na_mpesa_online(phone_number, amount, account_ref):
+    """Send STK Push using Daraja Lipa Na M-Pesa Online API"""
+    try:
+        access_token = get_mpesa_access_token()
+        if not access_token:
+            return {"success": False, "error": "Failed to get access token"}
+        
+        timestamp = time.strftime("%Y%m%d%H%M%S")
+        password = base64.b64encode(
+            f"{MPESA_SHORTCODE}{MPESA_PASSKEY}{timestamp}".encode()
+        ).decode()
+        
+        payload = {
+            "BusinessShortCode": MPESA_SHORTCODE,
+            "Password": password,
+            "Timestamp": timestamp,
+            "TransactionType": "CustomerPayBillOnline",
+            "Amount": int(amount),
+            "PartyA": phone_number,
+            "PartyB": MPESA_SHORTCODE,
+            "PhoneNumber": phone_number,
+            "CallBackURL": MPESA_CALLBACK_URL,
+            "AccountReference": account_ref,
+            "TransactionDesc": f"RHMS Payment - {account_ref}",
+            "Remark": "RHMS Rental Payment"
+        }
+        
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.post(MPESA_STK_URL, json=payload, headers=headers)
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("ResponseCode") == "0":
+                return {
+                    "success": True,
+                    "message": f"M-Pesa STK Push sent to {phone_number}",
+                    "request_id": result.get("CheckoutRequestID"),
+                    "merchant_request_id": result.get("MerchantRequestID"),
+                    "phone_number": phone_number,
+                    "amount": amount
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": result.get("errorMessage", "Unknown error"),
+                    "response_code": result.get("ResponseCode")
+                }
+        else:
+            return {
+                "success": False,
+                "error": f"HTTP {response.status_code}: {response.text}"
+            }
+            
+    except Exception as e:
+        print(f"Error sending STK Push: {str(e)}")
+        return {"success": False, "error": f"STK Push failed: {str(e)}"}
 
 def get_cursor():
     return mysql.connection.cursor()
 
 
 def _row_to_house(row):
-    # houses: id, house_number, status
-    return {
-        "id": row[0],
-        "house_number": row[1],
-        "status": row[2],
-    }
+    """Convert a house row to a dictionary"""
+    if len(row) >= 5:
+        return {
+            "id": row[0],
+            "house_number": row[1],
+            "status": row[2],
+            "price": float(row[3]) if row[3] is not None else 0.0,
+            "house_type": row[4] if row[4] is not None else "Single Room"
+        }
+    else:
+        # Fallback for old data structure
+        return {
+            "id": row[0],
+            "house_number": row[1],
+            "status": row[2],
+            "price": float(row[3]) if len(row) > 3 and row[3] is not None else 0.0,
+            "house_type": "Single Room"
+        }
 
 
 def _row_to_tenant(row):
@@ -102,9 +211,15 @@ def add_tenant():
     try:
         cur.execute("SELECT house_number FROM houses WHERE status='Vacant'")
         houses = cur.fetchall()
-    except MySQLdb.ProgrammingError:
+        print(f"DEBUG: Found {len(houses)} vacant houses: {[h[0] for h in houses]}")
+    except MySQLdb.ProgrammingError as e:
+        print(f"DEBUG: Database error: {e}")
         houses = []
+    finally:
+        cur.close()
+    
     if request.method == 'POST':
+        cur = get_cursor()
         name = request.form.get('name')
         national_id = request.form.get('national_id')
         phone = request.form.get('phone')
@@ -112,6 +227,7 @@ def add_tenant():
         house_number = request.form.get('house_number')
         move_in_date = request.form.get('move_in_date')
         if not all([name, national_id, phone, email, house_number, move_in_date]):
+            cur.close()
             return render_template("add_tenant.html", houses=houses, error="All fields required")
         try:
             cur.execute(
@@ -238,10 +354,10 @@ def houses():
         return redirect(url_for('home'))
     cur = get_cursor()
     
-    # Get houses list with tenant info
+    # Get houses list with tenant info, price, and type
     try:
         cur.execute("""
-            SELECT h.id, h.house_number, h.status, t.name 
+            SELECT h.id, h.house_number, h.status, h.price, h.house_type, t.name 
             FROM houses h 
             LEFT JOIN tenants t ON h.house_number = t.house_number AND t.status = 'approved'
             ORDER BY h.house_number
@@ -265,11 +381,14 @@ def houses():
     if request.method == 'POST':
         house_number = request.form.get('house_number')
         status = request.form.get('status', 'Vacant')
+        price = request.form.get('price', '10000.00')  # Default price if not provided
+        house_type = request.form.get('house_type', 'Single Room')  # Default type if not provided
+        
         if house_number:
             try:
                 cur.execute(
-                    "INSERT INTO houses(house_number, status) VALUES(%s,%s)",
-                    (house_number, status)
+                    "INSERT INTO houses(house_number, status, price, house_type) VALUES(%s,%s,%s,%s)",
+                    (house_number, status, price, house_type)
                 )
                 mysql.connection.commit()
                 flash('House added successfully!', 'success')
@@ -279,7 +398,7 @@ def houses():
             # Refresh houses list
             try:
                 cur.execute("""
-                    SELECT h.id, h.house_number, h.status, t.name 
+                    SELECT h.id, h.house_number, h.status, h.price, h.house_type, t.name 
                     FROM houses h 
                     LEFT JOIN tenants t ON h.house_number = t.house_number AND t.status = 'approved'
                     ORDER BY h.house_number
@@ -413,15 +532,11 @@ def payments():
 
 
 @app.route('/api/houses')
-def api_houses():
-    """Public JSON endpoint: list houses, optional ?vacant=1 to filter."""
-    vacant_only = request.args.get("vacant") == "1"
+def api_get_houses():
+    """Get all houses with their status, price, and type"""
     try:
         cur = get_cursor()
-        if vacant_only:
-            cur.execute("SELECT * FROM houses WHERE status='Vacant'")
-        else:
-            cur.execute("SELECT * FROM houses")
+        cur.execute("SELECT id, house_number, status, price, house_type FROM houses ORDER BY house_number")
         rows = cur.fetchall()
         cur.close()
         return jsonify([_row_to_house(r) for r in rows]), 200
@@ -447,6 +562,13 @@ def api_create_tenant():
 
     try:
         cur = get_cursor()
+        
+        # Check if email already exists
+        cur.execute("SELECT id FROM tenants WHERE email = %s", (email,))
+        if cur.fetchone():
+            cur.close()
+            return jsonify({"error": "Email is already registered. Please use a different email."}), 400
+        
         # Ensure house exists and is vacant
         cur.execute("SELECT status FROM houses WHERE house_number=%s", (house_number,))
         row = cur.fetchone()
@@ -495,10 +617,9 @@ def add_payment():
         print(f"Total tenants in database: {count}")
         
         query = "SELECT id, name, house_number FROM tenants WHERE status = 'approved' ORDER BY name"
-        print(f"Executing query: {query}")
         cur.execute(query)
         tenants_list = cur.fetchall()
-        print(f"Query result: {tenants_list}")
+        print(f"Found {len(tenants_list)} approved tenants")
         cur.close()
     except MySQLdb.ProgrammingError as e:
         print(f"Database error: {e}")
@@ -528,8 +649,8 @@ def add_payment():
             except Exception as e:
                 print(f"Error in add_payment: {e}")
         return redirect(url_for('payments'))
-    print(f"Rendering payments.html with tenants_list: {tenants_list}")
-    return render_template("payments.html", payments=get_payments(), tenants_list=tenants_list)
+    print(f"Rendering add_payment.html with tenants_list: {tenants_list}")
+    return render_template("add_payment.html", tenants=tenants_list)
 
 
 @app.route('/api/tenant-login', methods=['POST'])
@@ -552,35 +673,31 @@ def api_tenant_login():
         """, (email,))
         tenant = cur.fetchone()
         
-        print(f"Login attempt for email: {email}")
-        print(f"Password provided: {password}")
-        print(f"Tenant found: {tenant}")
+        print(f"Login attempt for email: '{email}'")
         
-        if tenant and (str(tenant[2]) == str(password)):  # Convert both to string for comparison
-            print(f"Login successful! National ID check: {tenant[2]} == {password}")
-            # Generate simple token
-            import hashlib
-            token = hashlib.md5(f"{tenant[0]}{tenant[1]}{email}".encode()).hexdigest()
-            
-            tenant_data = {
-                "id": tenant[0],
-                "name": tenant[1],
-                "national_id": tenant[2],
-                "phone": tenant[3],
-                "email": tenant[4],
-                "house_number": tenant[5],
-                "status": tenant[6],
-                "move_in_date": str(tenant[7]) if tenant[7] else None
-            }
-            
-            cur.close()
-            return jsonify({
-                "success": True,
-                "message": "Login successful",
-                "token": token,
-                "tenant": tenant_data
-            })
-        else:
+        if tenant:
+            if str(tenant[2]) == str(password):  # Convert both to string for comparison
+                print("Login successful!")
+                # Generate simple token
+                import hashlib
+                token = hashlib.md5(f"{tenant[0]}{tenant[1]}{email}".encode()).hexdigest()
+                
+                tenant_data = {
+                    "id": tenant[0],
+                    "name": tenant[1],
+                    "national_id": tenant[2],
+                    "phone": tenant[3],
+                    "email": tenant[4],
+                    "house_number": tenant[5],
+                    "status": tenant[6],
+                    "move_in_date": str(tenant[7]) if tenant[7] else None
+                }
+                
+                return jsonify({
+                    'success': True,
+                    'token': token,
+                    'tenant': tenant_data
+                })
             print(f"Login failed!")
             if tenant:
                 print(f"Tenant found but password mismatch. Expected: {tenant[2]}, Got: {password}")
@@ -594,7 +711,7 @@ def api_tenant_login():
 
 
 @app.route('/api/tenant-payments/<int:tenant_id>', methods=['GET'])
-def api_get_tenant_payments():
+def api_get_tenant_payments(tenant_id):
     """Get payments for specific tenant"""
     try:
         cur = get_cursor()
@@ -611,17 +728,65 @@ def api_get_tenant_payments():
         return jsonify({"error": "Could not fetch payments"}), 500
 
 
-@app.route('/api/tenant-maintenance/<string:tenant_name>', methods=['GET'])
-def api_get_tenant_maintenance(tenant_name):
+@app.route('/api/tenant-balance/<int:tenant_id>', methods=['GET'])
+def api_get_tenant_balance(tenant_id):
+    """Get tenant balance information including house price and payments"""
+    try:
+        cur = get_cursor()
+        
+        # Get tenant info with house price and type
+        cur.execute("""
+            SELECT t.id, t.name, t.house_number, h.price, h.house_type
+            FROM tenants t
+            JOIN houses h ON t.house_number = h.house_number
+            WHERE t.id = %s AND t.status = 'approved'
+        """, (tenant_id,))
+        tenant = cur.fetchone()
+        
+        if not tenant:
+            cur.close()
+            return jsonify({"error": "Tenant not found or not approved"}), 404
+        
+        # Get total payments
+        cur.execute("""
+            SELECT COALESCE(SUM(amount), 0) as total_paid
+            FROM payments
+            WHERE tenant_id = %s
+        """, (tenant_id,))
+        payment_row = cur.fetchone()
+        total_paid = float(payment_row[0]) if payment_row[0] else 0.0
+        
+        house_price = float(tenant[3]) if tenant[3] else 10000.0
+        balance = house_price - total_paid
+        
+        balance_info = {
+            "tenant_id": tenant[0],
+            "tenant_name": tenant[1],
+            "house_number": tenant[2],
+            "house_price": house_price,
+            "house_type": tenant[4] if tenant[4] else "Single Room",
+            "total_paid": total_paid,
+            "balance": balance,
+            "payment_status": "Paid" if balance <= 0 else "Partial" if total_paid > 0 else "Unpaid"
+        }
+        
+        cur.close()
+        return jsonify(balance_info)
+    except Exception as e:
+        return jsonify({"error": "Could not fetch balance information"}), 500
+
+
+@app.route('/api/tenant-maintenance/<int:tenant_id>', methods=['GET'])
+def api_get_tenant_maintenance(tenant_id):
     """Get maintenance requests for specific tenant"""
     try:
         cur = get_cursor()
         cur.execute("""
-            SELECT id, issue, status, created_at 
+            SELECT id, tenant, house_number, issue, status, created_at 
             FROM maintenance 
-            WHERE tenant = %s 
+            WHERE tenant = (SELECT name FROM tenants WHERE id = %s) 
             ORDER BY created_at DESC
-        """, (tenant_name,))
+        """, (tenant_id,))
         requests = cur.fetchall()
         cur.close()
         return jsonify(requests)
@@ -629,43 +794,70 @@ def api_get_tenant_maintenance(tenant_name):
         return jsonify({"error": "Could not fetch maintenance requests"}), 500
 
 
-@app.route('/api/tenant-payment', methods=['POST'])
-def api_make_tenant_payment():
-    """Make payment as tenant"""
+# ===== TENANT DASHBOARD APIS =====
+"""Update tenant information"""
+@app.route('/api/tenants/<int:tenant_id>', methods=['PUT'])
+def api_update_tenant(tenant_id):
+    """Update tenant information"""
     try:
         data = request.get_json()
-        tenant_id = data.get('tenant_id')
-        amount = data.get('amount')
-        payment_method = data.get('payment_method', 'Cash')
-        payment_date = data.get('payment_date')
-        
-        if not all([tenant_id, amount, payment_date]):
-            return jsonify({"error": "Missing required fields"}), 400
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
         
         cur = get_cursor()
-        cur.execute("""
-            INSERT INTO payments(tenant_id, amount, payment_date, payment_method) 
-            VALUES(%s, %s, %s, %s)
-        """, (tenant_id, amount, payment_date, payment_method))
+        
+        # Check if tenant exists
+        cur.execute("SELECT id FROM tenants WHERE id = %s", (tenant_id,))
+        if not cur.fetchone():
+            cur.close()
+            return jsonify({"error": "Tenant not found"}), 404
+        
+        # Update tenant information
+        update_fields = []
+        update_values = []
+        
+        if 'name' in data:
+            update_fields.append("name = %s")
+            update_values.append(data['name'])
+        if 'email' in data:
+            update_fields.append("email = %s")
+            update_values.append(data['email'])
+        if 'phone' in data:
+            update_fields.append("phone = %s")
+            update_values.append(data['phone'])
+        if 'national_id' in data:
+            update_fields.append("national_id = %s")
+            update_values.append(data['national_id'])
+        
+        if not update_fields:
+            cur.close()
+            return jsonify({"error": "No valid fields to update"}), 400
+        
+        update_values.append(tenant_id)
+        
+        query = f"UPDATE tenants SET {', '.join(update_fields)} WHERE id = %s"
+        cur.execute(query, update_values)
         mysql.connection.commit()
+        
+        # Fetch updated tenant data
+        cur.execute(
+            "SELECT id, name, national_id, phone, email, house_number, move_in_date, status FROM tenants WHERE id = %s",
+            (tenant_id,)
+        )
+        updated_tenant = cur.fetchone()
         cur.close()
         
-        return jsonify({"success": True, "message": "Payment recorded successfully"})
+        if updated_tenant:
+            return jsonify(_row_to_tenant(updated_tenant))
+        else:
+            return jsonify({"error": "Failed to retrieve updated tenant"}), 500
+            
+    except MySQLdb.IntegrityError as e:
+        mysql.connection.rollback()
+        return jsonify({"error": "Database integrity error. National ID might already exist."}), 400
     except Exception as e:
-        return jsonify({"error": "Could not process payment"}), 500
-
-
-@app.route('/api/approved-tenants', methods=['GET'])
-def api_approved_tenants():
-    """Get approved tenants for dropdown"""
-    try:
-        cur = get_cursor()
-        cur.execute("SELECT id, name, house_number FROM tenants WHERE status = 'approved' ORDER BY name")
-        tenants = cur.fetchall()
-        cur.close()
-        return jsonify(tenants)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        mysql.connection.rollback()
+        return jsonify({"error": f"Could not update tenant: {str(e)}"}), 500
 
 
 @app.route('/reports', methods=['GET', 'POST'])
@@ -1150,6 +1342,142 @@ def api_resolve_maintenance(request_id):
 
 # ===== HOUSE MANAGEMENT APIS =====
 
+@app.route('/api/mpesa-payment', methods=['POST'])
+def api_mpesa_payment():
+    try:
+        data = request.get_json()
+        phone_number = data.get('phone_number')
+        amount = data.get('amount')
+        till_number = data.get('till_number')
+        account_ref = data.get('account_ref')
+        tenant_id = data.get('tenant_id')
+        
+        if not all([phone_number, amount, till_number]):
+            return jsonify({'success': False, 'error': 'Missing required fields'})
+        
+        # Validate phone number (Kenya format)
+        if not phone_number.startswith('+254') and not phone_number.startswith('07'):
+            return jsonify({'success': False, 'error': 'Invalid phone number format'})
+        
+        # Convert to proper format
+        if phone_number.startswith('07'):
+            phone_number = '+254' + phone_number[1:]
+        
+        # Validate amount
+        try:
+            amount = float(amount)
+            if amount <= 0:
+                return jsonify({'success': False, 'error': 'Amount must be greater than 0'})
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Invalid amount'})
+        
+        # Check if we have real Daraja credentials
+        if MPESA_CONSUMER_KEY == "YOUR_CONSUMER_KEY_HERE":
+            # Fallback to simulation mode for testing
+            print("Simulation mode: No Daraja credentials configured")
+            print(f"Phone: {phone_number}, Amount: {amount}, Till: {till_number}, Ref: {account_ref}")
+            print("To enable real M-Pesa, configure Daraja credentials")
+            
+            return jsonify({
+                'success': True,
+                'message': f'Simulation: M-Pesa STK Push sent to {phone_number}',
+                'request_id': f'MPESA_SIM_{int(time.time())}',
+                'amount': amount,
+                'phone_number': phone_number,
+                'simulation': True
+            })
+        
+        # Use real Daraja API
+        print("Real M-Pesa STK Push - Daraja API")
+        print(f"Phone: {phone_number}, Amount: {amount}, Till: {till_number}, Ref: {account_ref}")
+        
+        result = lipa_na_mpesa_online(phone_number, amount, account_ref)
+        
+        if result.get('success'):
+            print("STK Push sent successfully!")
+            print(f"Request ID: {result.get('request_id')}")
+            
+            return jsonify({
+                'success': True,
+                'message': result.get('message'),
+                'request_id': result.get('request_id'),
+                'merchant_request_id': result.get('merchant_request_id'),
+                'amount': amount,
+                'phone_number': phone_number,
+                'real_mpesa': True
+            })
+        else:
+            print("STK Push failed!")
+            print(f"Error: {result.get('error')}")
+            
+            return jsonify({
+                'success': False,
+                'error': result.get('error'),
+                'response_code': result.get('response_code')
+            })
+        
+    except Exception as e:
+        print(f"M-Pesa payment error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Payment request failed'})
+
+
+@app.route('/mpesa-callback', methods=['POST'])
+def mpesa_callback():
+    """Handle M-Pesa payment confirmation callbacks"""
+    try:
+        data = request.get_json()
+        print("M-Pesa payment callback received")
+        print(f"Data: {data}")
+        
+        # Extract payment details from callback
+        if data.get("Body") and data["Body"].get("stkCallback"):
+            callback = data["Body"]["stkCallback"]
+            merchant_request_id = callback.get("MerchantRequestID")
+            checkout_request_id = callback.get("CheckoutRequestID")
+            result_code = callback.get("ResultCode")
+            
+            if result_code == "0":
+                # Payment successful
+                callback_metadata = callback.get("CallbackMetadata", {})
+                metadata_items = callback_metadata.get("Item", [])
+                
+                amount = None
+                mpesa_receipt = None
+                phone_number = None
+                
+                for item in metadata_items:
+                    if item.get("Name") == "Amount":
+                        amount = item.get("Value")
+                    elif item.get("Name") == "MpesaReceiptNumber":
+                        mpesa_receipt = item.get("Value")
+                    elif item.get("Name") == "PhoneNumber":
+                        phone_number = item.get("Value")
+                
+                print("Payment successful!")
+                print(f"Amount: KSH {amount}, Phone: {phone_number}, Receipt: {mpesa_receipt}")
+                print(f"Request ID: {checkout_request_id}")
+                
+                # Here you would:
+                # 1. Update payment status in database
+                # 2. Send confirmation SMS/email
+                # 3. Update tenant balance
+                # 4. Log transaction
+                
+            else:
+                # Payment failed
+                error_message = callback.get("ResultDesc", "Unknown error")
+                print("Payment failed!")
+                print(f"Error: {error_message}")
+                print(f"Request ID: {checkout_request_id}")
+        
+        # Always return success to M-Pesa
+        return jsonify({"ResultCode": 0, "ResultDesc": "Callback received successfully"})
+        
+    except Exception as e:
+        print(f"Error processing M-Pesa callback: {str(e)}")
+        return jsonify({"ResultCode": 1, "ResultDesc": "Callback processing failed"})
+
+
 @app.route('/api/houses', methods=['POST'])
 def api_add_house():
     """Add a new house"""
@@ -1157,34 +1485,94 @@ def api_add_house():
         data = request.get_json()
         house_number = data.get('house_number', '').strip()
         status = data.get('status', 'Vacant')
+        price = data.get('price', 10000.00)  # Default price if not provided
+        house_type = data.get('house_type', 'Single Room')  # Default type if not provided
         
         if not house_number:
             return jsonify({"error": "House number is required"}), 400
         
         cur = get_cursor()
-        # Check if house already exists
-        cur.execute("SELECT id FROM houses WHERE house_number = %s", (house_number,))
-        if cur.fetchone():
-            cur.close()
-            return jsonify({"error": "House number already exists"}), 400
         
-        # Insert new house
+        # Insert new house with price and type
         cur.execute(
-            "INSERT INTO houses (house_number, status) VALUES (%s, %s)",
-            (house_number, status)
+            "INSERT INTO houses (house_number, status, price, house_type) VALUES (%s, %s, %s, %s)",
+            (house_number, status, price, house_type)
         )
         mysql.connection.commit()
         
-        # Get created house
+        # Get the created house
         house_id = cur.lastrowid
         cur.execute("SELECT * FROM houses WHERE id = %s", (house_id,))
         row = cur.fetchone()
+        
+        house = {
+            "id": row[0],
+            "house_number": row[1],
+            "status": row[2],
+            "price": float(row[3]) if len(row) > 3 else 10000.00,
+            "house_type": row[4] if len(row) > 4 else "Single Room"
+        }
+        
         cur.close()
-        
-        return jsonify(_row_to_house(row)), 201
-        
+        return jsonify(house), 201
     except Exception as e:
         return jsonify({"error": "Could not add house"}), 500
+
+
+@app.route('/api/houses/<int:house_id>', methods=['PUT'])
+def api_update_house(house_id):
+    """Update house information including price"""
+    try:
+        data = request.get_json()
+        price = data.get('price')
+        status = data.get('status')
+        
+        if price is None and status is None:
+            return jsonify({"error": "At least one field (price or status) must be provided"}), 400
+        
+        cur = get_cursor()
+        
+        # Check if house exists
+        cur.execute("SELECT house_number, status FROM houses WHERE id = %s", (house_id,))
+        house = cur.fetchone()
+        if not house:
+            cur.close()
+            return jsonify({"error": "House not found"}), 404
+        
+        # Build update query
+        update_fields = []
+        update_values = []
+        
+        if price is not None:
+            update_fields.append("price = %s")
+            update_values.append(price)
+        
+        if status is not None:
+            update_fields.append("status = %s")
+            update_values.append(status)
+        
+        update_values.append(house_id)
+        
+        query = f"UPDATE houses SET {', '.join(update_fields)} WHERE id = %s"
+        cur.execute(query, update_values)
+        mysql.connection.commit()
+        
+        # Get updated house
+        cur.execute("SELECT id, house_number, status, price FROM houses WHERE id = %s", (house_id,))
+        row = cur.fetchone()
+        
+        house_data = {
+            "id": row[0],
+            "house_number": row[1],
+            "status": row[2],
+            "price": float(row[3]) if row[3] is not None else 0.0
+        }
+        
+        cur.close()
+        return jsonify(house_data)
+        
+    except Exception as e:
+        return jsonify({"error": "Could not update house"}), 500
 
 
 @app.route('/api/houses/<int:house_id>', methods=['DELETE'])
@@ -1328,58 +1716,6 @@ def api_maintenance_request():
         return jsonify({"error": "Could not submit maintenance request"}), 500
 
 
-@app.route('/api/tenant-payments/<int:tenant_id>')
-def api_tenant_payments(tenant_id):
-    """Get payments for a specific tenant"""
-    try:
-        cur = get_cursor()
-        cur.execute("""
-            SELECT id, amount, payment_date, payment_method
-            FROM payments
-            WHERE tenant_id = %s
-            ORDER BY payment_date DESC, id DESC
-        """, (tenant_id,))
-        
-        payments = []
-        for row in cur.fetchall():
-            payments.append({
-                "id": row[0],
-                "amount": float(row[1]),
-                "payment_date": row[2].isoformat() if row[2] else None,
-                "payment_method": row[3]
-            })
-        cur.close()
-        return jsonify(payments)
-    except Exception as e:
-        return jsonify({"error": "Could not fetch tenant payments"}), 500
-
-
-@app.route('/api/tenant-maintenance/<int:tenant_id>')
-def api_tenant_maintenance(tenant_id):
-    """Get maintenance requests for a specific tenant"""
-    try:
-        cur = get_cursor()
-        cur.execute("""
-            SELECT id, tenant, house_number, issue, status, created_at
-            FROM maintenance
-            WHERE tenant = (SELECT name FROM tenants WHERE id = %s)
-            ORDER BY created_at DESC, id DESC
-        """, (tenant_id,))
-        
-        requests = []
-        for row in cur.fetchall():
-            requests.append({
-                "id": row[0],
-                "tenant": row[1],
-                "house_number": row[2],
-                "issue": row[3],
-                "status": row[4],
-                "created_at": row[5].isoformat() if row[5] else None
-            })
-        cur.close()
-        return jsonify(requests)
-    except Exception as e:
-        return jsonify({"error": "Could not fetch tenant maintenance requests"}), 500
 
 
 if __name__ == "__main__":
