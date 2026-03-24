@@ -26,7 +26,7 @@
 
 <label>Tenant</label>
 <select name="tenant_id" required>
-  <option value="">-- Select Tenant --</option>
+  <option value="">Select Tenant</option>
   {% for tenant in tenants or [] %}
   <option value="{{ tenant[0] }}">{{ tenant[1] }}</option>
   {% endfor %}

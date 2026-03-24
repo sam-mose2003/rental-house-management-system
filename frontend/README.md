@@ -1,108 +1,102 @@
 # RHMS Frontend
 
-Frontend application for the Rental House Management System built with React and Vite.
+A modern React app for managing rental properties, built with simplicity and ease of use in mind.
 
-## Overview
+## What It Does
 
-This is the React frontend that provides a modern, responsive user interface for managing rental properties and tenants. It communicates with a Flask backend API for all data operations.
+This React frontend provides a clean, responsive interface for managing rental properties and tenants. It talks to a Flask backend for all data operations.
 
-## Features
+## Key Features
 
-- **Admin Dashboard**: Comprehensive management interface
-- **Tenant Portal**: Tenant-specific views and actions
-- **Property Management**: Interactive house management
-- **Real-time Updates**: Dynamic data synchronization
-- **Responsive Design**: Works on desktop and mobile devices
+- **Admin Dashboard**: Everything you need to manage properties
+- **Tenant Portal**: A dedicated space for tenants to manage their account
+- **Property Management**: Easy-to-use house management tools
+- **Real-time Updates**: Information stays current automatically
+- **Mobile Friendly**: Works great on phones and tablets
 
-## Technology Stack
+## Tech We Used
 
 - **React 19.2.0** - Modern UI framework with hooks
 - **Vite 7.3.1** - Fast development server and build tool
-- **React Router DOM 7.13.1** - Client-side routing
-- **Bootstrap 5.3.8** - UI components and styling
-- **Chart.js 4.5.1** - Data visualization components
+- **React Router DOM 7.13.1** - Handles navigation between pages
+- **Bootstrap 5.3.8** - Clean, responsive UI components
+- **Chart.js 4.5.1** - Simple charts and graphs
 
 ## Getting Started
 
-### Prerequisites
+### What You Need
 - Node.js 18+ 
 - npm or yarn
 
-### Installation
+### Quick Setup
 
-1. Install dependencies:
+1. **Install Packages**
 ```bash
 npm install
 ```
 
-2. Start development server:
+2. **Start Development**
 ```bash
 npm run dev
 ```
 
-3. Open browser at `http://localhost:5173`
+3. **Open Browser**
+Navigate to `http://localhost:5173`
 
-### Available Scripts
+**If port is busy:**
+```bash
+npm run dev -- --port 5176
+```
+
+### Available Commands
 
 - `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
+- `npm run build` - Create production-ready files
+- `npm run preview` - Test production build locally
+- `npm run lint` - Check code quality
 
-## Project Structure
+## How It's Organized
 
 ```
 frontend/
 ├── src/
-│   ├── components/     # Reusable React components
-│   ├── pages/         # Page-level components
-│   ├── api.js         # API communication utilities
+│   ├── components/     # Reusable UI pieces
+│   ├── pages/         # Different app pages
+│   ├── api.js         # API calls
 │   ├── utils/         # Helper functions
-│   ├── assets/        # Static assets
-│   └── main.jsx       # Application entry point
+│   └── main.jsx       # App starting point
 ├── public/            # Public static files
 └── index.html         # HTML template
 ```
 
-## API Integration
+## How It Works
 
-The frontend communicates with the backend API at `http://localhost:5000`. API calls are centralized in `src/api.js`.
-
-### Environment Configuration
-
-The development server is configured to proxy API requests to avoid CORS issues. See `vite.config.js` for configuration.
-
-## Development
-
-### Component Architecture
-
-- **Pages**: Top-level route components
+### Building Blocks
+- **Pages**: Main screens like dashboard, login
 - **Components**: Reusable UI elements
 - **API**: Centralized HTTP client
 - **Utils**: Shared helper functions
 
 ### Styling
-
 - Bootstrap 5 for base styling
 - Custom CSS in `src/App.css`
 - Component-specific styles as needed
 
-### State Management
-
+### Managing Data
 - React hooks for local state
-- Context API for global application state
-- API calls for data synchronization
+- Context API for app-wide state
+- API calls for keeping data in sync
 
-## Build and Deployment
+## Building for Production
 
-### Production Build
 ```bash
 npm run build
 ```
 
-This creates an optimized build in the `dist/` folder ready for deployment.
+This creates optimized files in the `dist/` folder ready for deployment.
 
-### Preview Production Build
+## Testing Production Build
+
 ```bash
 npm run preview
 ```
@@ -112,23 +106,21 @@ npm run preview
 1. Follow React best practices
 2. Use ESLint for code quality
 3. Test components thoroughly
-4. Maintain responsive design principles
+4. Keep mobile users in mind
 
-## Troubleshooting
+## Quick Fixes
 
-### Common Issues
-
-1. **Port 5173 already in use**
+### Port 5173 Already in Use
    ```bash
    npm run dev -- --port 5176
    ```
 
-2. **API connection issues**
-   - Ensure backend server is running on port 5000
-   - Check CORS configuration in backend
+### API Connection Issues
+   - Make sure backend server is running on port 5000
+   - Check CORS settings in backend
 
-3. **Build errors**
-   - Clear node_modules and reinstall
-   - Check for dependency conflicts
+### Build Errors
+   - Remove node_modules and reinstall
+   - Check for package conflicts
 
 For more details about the full project, see the main [README.md](../README.md).

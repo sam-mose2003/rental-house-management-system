@@ -1,14 +1,14 @@
 # Rental House Management System (RHMS)
 
-A comprehensive web application for managing rental properties, tenants, and administrative tasks.
+A simple and practical web application for managing rental properties, tenants, and daily administrative tasks.
 
-## Features
+## What It Does
 
 - **Property Management**: Add, edit, and manage rental houses
-- **Tenant Management**: Track tenant information, applications, and status
-- **Admin Dashboard**: Overview of properties, tenants, and system statistics
-- **User Authentication**: Secure login system for admins and tenants
-- **Database Integration**: MySQL backend with Flask API
+- **Tenant Management**: Keep track of tenant information and applications  
+- **Admin Dashboard**: See everything at a glance - properties, tenants, and numbers
+- **User Login**: Secure access for both admins and tenants
+- **Database Storage**: All data safely stored in MySQL
 
 ## Technology Stack
 
@@ -20,104 +20,108 @@ A comprehensive web application for managing rental properties, tenants, and adm
 - **Chart.js 4.5.1** - Data visualization
 
 ### Backend
-- **Flask 3.0.0** - Python web framework
-- **Flask-MySQLdb 2.0.0** - MySQL database integration
-- **Flask-Cors 4.0.0** - Cross-origin resource sharing
+- **Flask 3.0.0** - Web framework that handles requests
+- **Flask-MySQLdb 2.0.0** - Connects to MySQL database
+- **Flask-Cors 4.0.0** - Lets frontend talk to backend
 
 ### Database
-- **MySQL** - Primary database for storing application data
+- **MySQL** - Where all your property and tenant data lives
 
-## Prerequisites
+## Getting Started
 
-- Node.js (v18 or higher)
+### What You Need
+- Node.js (v18 or higher) 
+- npm or yarn
 - Python 3.8+
-- MySQL Server (XAMPP recommended)
-- Git
+- MySQL Server (XAMPP makes this easy)
+- Git (optional but helpful)
 
-## Installation
+### Setup Steps
 
-### 1. Clone the Repository
-```bash
-git clone <repository-url>
-cd RHMS_Project
-```
-
-### 2. Database Setup
-1. Start MySQL server (via XAMPP or standalone)
-2. Create database named `rhms`
-3. Import the database schema:
+1. **Get the Code**
    ```bash
+   git clone <repository-url>
+   cd RHMS_Project
+   ```
+
+2. **Set Up Database**
+   ```bash
+   # Start MySQL (using XAMPP is easiest)
+   # Create database named 'rhms'
    mysql -u root -p rhms < backend/schema.sql
    ```
 
-### 3. Backend Setup
-```bash
-# Create virtual environment
-python -m venv venv
+3. **Start Backend**
+   ```bash
+   # Create virtual environment
+   python -m venv venv
+   
+   # Activate it
+   # Windows:
+   venv\Scripts\activate
+   # Mac/Linux:
+   source venv/bin/activate
+   
+   # Install what's needed
+   pip install -r requirements.txt
+   
+   # Run the backend
+   python backend/app.py
+   ```
 
-# Activate virtual environment
-# On Windows:
-venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
+4. **Start Frontend**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
 
-# Install dependencies
-pip install -r requirements.txt
-```
+## Running The App
 
-### 4. Frontend Setup
-```bash
-cd frontend
-npm install
-```
-
-## Running the Application
-
-### Start Backend Server
+### Backend
 ```bash
 # From project root (with virtual environment activated)
 python backend/app.py
 ```
-The backend will run on `http://localhost:5000`
+The backend runs at `http://localhost:5000`
 
-### Start Frontend Development Server
+### Frontend  
 ```bash
 cd frontend
 npm run dev
 ```
-The frontend will run on `http://localhost:5173`
+The frontend runs at `http://localhost:5173`
 
-### Alternative: Start Frontend on Different Port
+**If port 5173 is busy:**
 ```bash
-cd frontend
 npm run dev -- --port 5176
 ```
 
-## Project Structure
+## Project Layout
 
 ```
 RHMS_Project/
 ├── backend/
 │   ├── app.py              # Main Flask application
-│   ├── schema.sql          # Database schema
+│   ├── schema.sql          # Database structure
 │   ├── templates/          # HTML templates
-│   └── static/            # Static assets
+│   └── static/            # CSS and images
 ├── frontend/
 │   ├── src/
-│   │   ├── components/    # React components
-│   │   ├── pages/         # Page components
-│   │   ├── api.js         # API utilities
-│   │   └── main.jsx       # App entry point
-│   ├── public/            # Public assets
-│   └── package.json       # Frontend dependencies
-├── requirements.txt       # Python dependencies
+│   │   ├── components/    # Reusable parts
+│   │   ├── pages/         # Different pages
+│   │   ├── api.js         # API calls
+│   │   └── main.jsx       # App starting point
+│   ├── public/            # Public files
+│   └── package.json       # Frontend packages
+├── requirements.txt       # Python packages
 └── README.md             # This file
 ```
 
-## Configuration
+## Settings
 
-### Database Configuration
-Database settings are configured in `backend/app.py`:
+### Database
+Database connection is in `backend/app.py`:
 ```python
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
@@ -125,20 +129,20 @@ app.config['MYSQL_PASSWORD'] = ''
 app.config['MYSQL_DB'] = 'rhms'
 ```
 
-### CORS Configuration
-The backend is configured to accept requests from:
+### Frontend-Backend Connection
+The backend accepts requests from:
 - `http://localhost:5173`
 - `http://127.0.0.1:5173`
 - `http://localhost:5176`
 - `http://127.0.0.1:5176`
 
-## API Endpoints
+## Available API Calls
 
-### Authentication
+### Login & Security
 - `POST /api/login` - User login
 - `POST /api/logout` - User logout
 
-### Houses
+### Properties
 - `GET /api/houses` - Get all houses
 - `POST /api/houses` - Add new house
 - `PUT /api/houses/<id>` - Update house
@@ -150,51 +154,45 @@ The backend is configured to accept requests from:
 - `PUT /api/tenants/<id>` - Update tenant
 - `DELETE /api/tenants/<id>` - Delete tenant
 
-## Development
+## Making Changes
 
 ### Code Style
-- ESLint configured for JavaScript/React
-- Python follows PEP 8 guidelines
+- Frontend uses ESLint for clean JavaScript
+- Backend follows Python best practices
 
 ### Testing
 ```bash
-# Frontend linting
+# Check frontend code
 cd frontend
 npm run lint
 
-# Backend testing (add tests as needed)
+# Add backend tests as needed
 python -m pytest backend/tests/
 ```
 
-## Troubleshooting
+## Common Problems
 
-### Common Issues
+### Database Won't Connect
+- Make sure MySQL server is running
+- Check database name is 'rhms'
+- Verify username/password in backend/app.py
 
-1. **MySQL Connection Error**
-   - Ensure MySQL server is running
-   - Check database credentials in `backend/app.py`
-   - Verify database `rhms` exists
+### Frontend Shows Errors
+- Make sure backend is running on port 5000
+- Check browser console for specific errors
+- Try refreshing the page
 
-2. **CORS Issues**
-   - Check that frontend URL is in CORS configuration
-   - Ensure backend is running before frontend
+### Port Already in Use
+- Change frontend port: `npm run dev -- --port 5176`
+- Stop other programs using ports 5000, 5173
 
-3. **Port Conflicts**
-   - Change frontend port if 5173 is occupied
-   - Check for other services using ports 5000, 5173
+## Sharing Your Work
 
-## License
+1. Fork the project
+2. Make your changes
+3. Test everything works
+4. Send a pull request
 
-This project is licensed under the ISC License.
+## Need Help?
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## Support
-
-For issues and questions, please use the GitHub issues page.
+For questions or issues, use the GitHub issues page.

@@ -104,10 +104,6 @@
     
     <div id="paymentForm" class="payment-form">
         <h3>Add New Payment</h3>
-        <!-- Debug: Show tenants_list length -->
-        <p style="background: #f0f0f0; padding: 10px; margin-bottom: 10px;">
-            <strong>DEBUG:</strong> Found {{ tenants_list|length }} tenants in dropdown
-        </p>
         
         <div class="form-group">
             <label for="tenant_id">Tenant</label>
@@ -119,15 +115,16 @@
             </select>
         </div>
         
-        <div id="tenantInfo" style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+        <div id="tenantInfo" style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: none;">
             <h4>Selected Tenant Info</h4>
-            <div id="tenantDetails">Select a tenant to see details</div>
+            <div id="tenantDetails"></div>
         </div>
         
         <script>
             async function loadTenantInfo(tenantId) {
                 if (!tenantId) {
-                    document.getElementById('tenantDetails').innerHTML = 'Select a tenant to see details';
+                    document.getElementById('tenantDetails').innerHTML = '';
+                    document.getElementById('tenantInfo').style.display = 'none';
                     return;
                 }
                 
@@ -142,8 +139,10 @@
                             <p><strong>House:</strong> ${selectedTenant[2]}</p>
                             <p><strong>ID:</strong> ${selectedTenant[0]}</p>
                         `;
+                        document.getElementById('tenantInfo').style.display = 'block';
                     } else {
                         document.getElementById('tenantDetails').innerHTML = 'Tenant not found';
+                        document.getElementById('tenantInfo').style.display = 'block';
                     }
                 } catch (error) {
                     console.error('Error loading tenant info:', error);

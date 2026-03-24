@@ -12,9 +12,6 @@ const TenantDashboard = () => {
   const [messageType, setMessageType] = useState('success');
   const [tenantInfo, setTenantInfo] = useState(null);
   const [balanceInfo, setBalanceInfo] = useState(null);
-  const [showPaymentPrompt, setShowPaymentPrompt] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
 
   // Check authentication on component mount
   useEffect(() => {
@@ -29,7 +26,6 @@ const TenantDashboard = () => {
     try {
       const tenant = JSON.parse(storedTenant);
       setTenantInfo(tenant);
-      console.log('Tenant authenticated:', tenant);
       
       // Load tenant's data
       loadTenantData(tenant.id);
@@ -78,67 +74,9 @@ const TenantDashboard = () => {
     navigate('/login');
   };
 
-  const handleTapToPay = async () => {
-    setIsProcessing(true);
-    try {
-      // Get tenant info for phone number
-      const storedTenant = JSON.parse(localStorage.getItem('tenantInfo') || '{}');
-      const phoneNumber = storedTenant.phone;
-      
-      if (!phoneNumber) {
-        setMessage('Phone number not found. Please update your profile.');
-        setMessageType('error');
-        setIsProcessing(false);
-        return;
-      }
-
-      // Get amount (use balance or custom amount)
-      const amount = paymentAmount || (balanceInfo?.balance || 0);
-      
-      if (amount <= 0) {
-        setMessage('Please enter a valid amount.');
-        setMessageType('error');
-        setIsProcessing(false);
-        return;
-      }
-
-      // Send M-Pesa STK Push request to backend
-      const response = await fetch('http://localhost:5000/api/mpesa-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          phone_number: phoneNumber,
-          amount: amount,
-          till_number: '6013828',
-          account_ref: `RHMS_${storedTenant.national_id || 'TENANT'}`,
-          tenant_id: storedTenant.id
-        })
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        setMessage(`M-Pesa STK Push sent to ${phoneNumber}! Please check your phone and enter your M-Pesa PIN to complete payment.`);
-        setMessageType('success');
-        setShowPaymentPrompt(true);
-      } else {
-        setMessage('Failed to send M-Pesa request: ' + (result.error || 'Unknown error'));
-        setMessageType('error');
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
-      setMessage('Failed to send M-Pesa request. Please try again.');
-      setMessageType('error');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   const [paymentForm, setPaymentForm] = useState({
     amount: '',
-    payment_method: 'M-Pesa',  // Default to M-Pesa
+    payment_method: 'Cash',  // Default to Cash
     payment_date: new Date().toISOString().split('T')[0]
   });
 
@@ -360,7 +298,7 @@ const TenantDashboard = () => {
     <div className="tenant-dashboard">
       <div className="tenant-header">
         <div className="tenant-info">
-          <h1>Tenant Dashboard</h1>
+          <h1>🏠 Tenant Dashboard</h1>
           <div className="tenant-details">
             <p><strong>Name:</strong> {tenantInfo.name}</p>
             <p><strong>House:</strong> {tenantInfo.house_number}</p>
@@ -478,9 +416,6 @@ const TenantDashboard = () => {
                 </button>
                 <button onClick={() => setActiveTab('payments')} className="action-card">
                   💰 Make Payment
-                </button>
-                <button onClick={() => setShowPaymentPrompt(true)} className="action-card tap-to-pay">
-                  📱 Tap to Pay
                 </button>
                 <button onClick={() => setActiveTab('history')} className="action-card">
                   📊 View History
@@ -775,130 +710,6 @@ const TenantDashboard = () => {
           🚪 Logout
         </button>
       </div>
-
-      {/* Payment Prompt Modal */}
-    {showPaymentPrompt && (
-      <div className="payment-modal-overlay" onClick={() => setShowPaymentPrompt(false)}>
-        <div className="payment-modal" onClick={(e) => e.stopPropagation()}>
-          <div className="payment-modal-header">
-            <h3>📱 M-Pesa STK Push Sent</h3>
-            <button className="close-modal" onClick={() => setShowPaymentPrompt(false)}>
-              ✕
-            </button>
-          </div>
-          
-          <div className="payment-modal-content">
-            {message && (
-              <div className={`alert ${messageType === 'success' ? 'alert-success' : 'alert-error'}`}>
-                {message}
-              </div>
-            )}
-            
-            <div className="till-number-container">
-              <div className="till-label">Business Till Number</div>
-              <div className="till-number">6013828</div>
-              <div className="till-name">RHMS Rental Payments</div>
-            </div>
-            
-            <div className="amount-input-section">
-              <label>Enter Payment Amount (KSH)</label>
-              <input
-                type="number"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                placeholder={balanceInfo ? balanceInfo.balance.toString() : '0'}
-                min="1"
-                className="amount-input"
-              />
-              {balanceInfo && (
-                <div className="balance-hint">
-                  Current balance: KSH {balanceInfo.balance.toLocaleString()}
-                </div>
-              )}
-            </div>
-            
-            <button 
-              className="stk-push-btn" 
-              onClick={handleTapToPay}
-              disabled={isProcessing || !paymentAmount || parseFloat(paymentAmount) <= 0}
-            >
-              {isProcessing ? '⏳ Sending STK Push...' : '📱 Send STK Push'}
-            </button>
-            
-            <div className="stk-instructions">
-              <h4>📱 Check Your Phone</h4>
-              <div className="instruction-steps">
-                <div className="instruction-step">
-                  <span className="step-number">1️⃣</span>
-                  <span>You should receive an M-Pesa menu popup</span>
-                </div>
-                <div className="instruction-step">
-                  <span className="step-number">2️⃣</span>
-                  <span>Enter your M-Pesa PIN to authorize payment</span>
-                </div>
-                <div className="instruction-step">
-                  <span className="step-number">3️⃣</span>
-                  <span>Wait for confirmation message</span>
-                </div>
-              </div>
-              
-              <div className="troubleshooting-section">
-                <h5>🔍 Not Receiving M-Pesa Popup?</h5>
-                <div className="troubleshooting-tips">
-                  <div className="tip">
-                    <span className="tip-title">1. Phone Number:</span>
-                    <span className="tip-text">Ensure {paymentAmount ? 'your phone is active and has network signal' : 'the number is correct'}</span>
-                  </div>
-                  <div className="tip">
-                    <span className="tip-title">2. M-Pesa Services:</span>
-                    <span className="tip-text">M-Pesa services should be active on your line</span>
-                  </div>
-                  <div className="tip">
-                    <span className="tip-title">3. Network Signal:</span>
-                    <span className="tip-text">Check you have good network connectivity</span>
-                  </div>
-                  <div className="tip">
-                    <span className="tip-title">4. Sufficient Balance:</span>
-                    <span className="tip-text">Ensure you have enough airtime for the transaction</span>
-                  </div>
-                  <div className="tip">
-                    <span className="tip-title">5. Try Again:</span>
-                    <span className="tip-text">Click "Send STK Push" button to retry</span>
-                  </div>
-                </div>
-                
-                <div className="manual-payment-note">
-                  <h6>💡 Alternative Payment Method</h6>
-                  <p>If STK Push doesn't work, you can:</p>
-                  <ul>
-                    <li>Use regular M-Pesa: Go to M-Pesa → Pay Bill → Enter till 6013828 → Amount → PIN → Send</li>
-                    <li>Record payment manually in the "Make Payment" section</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            
-            <div className="payment-actions">
-              <button 
-                className="payment-btn confirm" 
-                onClick={() => {
-                  setShowPaymentPrompt(false);
-                  setActiveTab('payments');
-                }}
-              >
-                I've Paid - Record Payment
-              </button>
-              <button 
-                className="payment-btn cancel" 
-                onClick={() => setShowPaymentPrompt(false)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )}
     </div>
   );
 };

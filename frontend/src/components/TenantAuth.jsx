@@ -194,7 +194,7 @@ const TenantAuth = () => {
     <div className="tenant-auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <h1>RHMS</h1>
+          <h1>🏠 HMS</h1>
           <h2>{isLogin ? 'Tenant Login' : 'Tenant Registration'}</h2>
         </div>
 

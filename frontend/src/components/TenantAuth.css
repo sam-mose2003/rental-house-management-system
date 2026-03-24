@@ -1,20 +1,36 @@
 .tenant-auth-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: url('https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80') center/cover no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  position: relative;
+}
+
+.tenant-auth-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
 }
 
 .auth-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   padding: 2.5rem;
   width: 100%;
   max-width: 480px;
   animation: slideUp 0.5s ease-out;
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 @keyframes slideUp {
@@ -34,11 +50,12 @@
 }
 
 .auth-header h1 {
-  color: #667eea;
-  font-size: 2rem;
-  font-weight: 700;
+  color: #2d3748;
+  font-size: 2.5rem;
+  font-weight: 800;
   margin: 0 0 0.5rem 0;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .auth-header h2 {
@@ -46,6 +63,7 @@
   font-size: 1.25rem;
   font-weight: 500;
   margin: 0;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .auth-form {
@@ -87,9 +105,9 @@
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #2d3748;
   background: white;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(45, 55, 72, 0.1);
 }
 
 .form-group input::placeholder {
@@ -104,7 +122,7 @@
 
 .submit-btn {
   flex: 1;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
   color: white;
   border: none;
   padding: 0.875rem 1.5rem;
@@ -115,11 +133,12 @@
   transition: all 0.2s ease;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(45, 55, 72, 0.3);
 }
 
 .submit-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+  box-shadow: 0 6px 20px rgba(45, 55, 72, 0.4);
 }
 
 .submit-btn:disabled {
@@ -131,22 +150,24 @@
 .login-btn,
 .register-btn {
   flex: 1;
-  background: white;
-  color: #667eea;
-  border: 2px solid #667eea;
+  background: rgba(255, 255, 255, 0.9);
+  color: #2d3748;
+  border: 2px solid #2d3748;
   padding: 0.875rem 1.5rem;
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
 }
 
 .login-btn:hover,
 .register-btn:hover {
-  background: #667eea;
+  background: #2d3748;
   color: white;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(45, 55, 72, 0.3);
 }
 
 .message {
