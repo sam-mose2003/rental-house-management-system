@@ -11,7 +11,9 @@ USE rhms;
 CREATE TABLE IF NOT EXISTS houses (
   id INT AUTO_INCREMENT PRIMARY KEY,
   house_number VARCHAR(50) NOT NULL UNIQUE,
-  status ENUM('Vacant', 'Occupied') NOT NULL DEFAULT 'Vacant'
+  status ENUM('Vacant', 'Occupied') NOT NULL DEFAULT 'Vacant',
+  price DECIMAL(12,2) DEFAULT 10000.00,
+  house_type VARCHAR(50) DEFAULT 'Single Room'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS tenants (
@@ -22,6 +24,7 @@ CREATE TABLE IF NOT EXISTS tenants (
   email VARCHAR(255) NOT NULL,
   house_number VARCHAR(50) NOT NULL,
   move_in_date DATE NOT NULL,
+  status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
   CONSTRAINT fk_tenants_house_number
     FOREIGN KEY (house_number) REFERENCES houses(house_number)
     ON UPDATE CASCADE

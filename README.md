@@ -1,127 +1,152 @@
-# Rental House Management System (RHMS)
+# 🏠 Rental House Management System (RHMS)
 
-A simple and practical web application for managing rental properties, tenants, and daily administrative tasks.
+A modern, user-friendly web application for managing rental properties, tenants, and daily administrative operations with approval workflows and role-based access.
 
-## What It Does
+## ✨ Key Features
 
-- **Property Management**: Add, edit, and manage rental houses
-- **Tenant Management**: Keep track of tenant information and applications  
-- **Admin Dashboard**: See everything at a glance - properties, tenants, and numbers
-- **User Login**: Secure access for both admins and tenants
-- **Database Storage**: All data safely stored in MySQL
+### 🏢 **For Property Managers**
+- **Property Management**: Add, edit, and manage rental houses with real-time status tracking
+- **Tenant Management**: Complete tenant lifecycle from application to approval
+- **Approval System**: Review and approve tenant applications with one click
+- **Financial Dashboard**: Track payments, occupancy rates, and revenue
+- **Maintenance Tracking**: Monitor and resolve maintenance requests efficiently
 
-## Technology Stack
+### 👥 **For Tenants**
+- **Easy Registration**: Simple online application process
+- **Personal Dashboard**: View personal information, payment history, and maintenance requests
+- **Secure Login**: Role-based access with approval workflows
+- **Payment Management**: Submit and track rent payments
+- **Maintenance Requests**: Report issues and track resolution status
+
+## 🛠 Technology Stack
 
 ### Frontend
-- **React 19.2.0** - Modern UI framework
-- **Vite 7.3.1** - Fast build tool and dev server
-- **React Router DOM 7.13.1** - Client-side routing
-- **Bootstrap 5.3.8** - Responsive CSS framework
-- **Chart.js 4.5.1** - Data visualization
+- **React 19.2.0** - Modern, component-based UI
+- **Vite 7.3.1** - Lightning-fast development and builds
+- **React Router DOM 7.13.1** - Seamless navigation
+- **Custom CSS** - Beautiful, responsive design without heavy frameworks
 
 ### Backend
-- **Flask 3.0.0** - Web framework that handles requests
-- **Flask-MySQLdb 2.0.0** - Connects to MySQL database
-- **Flask-Cors 4.0.0** - Lets frontend talk to backend
+- **Flask** - Lightweight, powerful web framework
+- **MySQL** - Reliable database for all property and tenant data
+- **Flask-CORS** - Secure cross-origin requests
+- **Token Authentication** - Secure API access
 
-### Database
-- **MySQL** - Where all your property and tenant data lives
+## 🚀 Quick Start
 
-## Getting Started
-
-### What You Need
-- Node.js (v18 or higher) 
-- npm or yarn
+### Prerequisites
+- Node.js (v18 or higher)
 - Python 3.8+
-- MySQL Server (XAMPP makes this easy)
-- Git (optional but helpful)
+- MySQL Server
+- Git
 
-### Setup Steps
+### Installation
 
-1. **Get the Code**
+1. **Clone the repository**
    ```bash
    git clone <repository-url>
    cd RHMS_Project
    ```
 
-2. **Set Up Database**
+2. **Database Setup**
    ```bash
-   # Start MySQL (using XAMPP is easiest)
-   # Create database named 'rhms'
-   mysql -u root -p rhms < backend/schema.sql
+   # Import database schema
+   mysql -u root -p < backend/schema.sql
    ```
 
-3. **Start Backend**
+3. **Backend Setup**
    ```bash
-   # Create virtual environment
-   python -m venv venv
-   
-   # Activate it
-   # Windows:
-   venv\Scripts\activate
-   # Mac/Linux:
-   source venv/bin/activate
-   
-   # Install what's needed
+   # Install Python dependencies
    pip install -r requirements.txt
    
-   # Run the backend
+   # Start the backend server
    python backend/app.py
    ```
 
-4. **Start Frontend**
+4. **Frontend Setup**
    ```bash
    cd frontend
    npm install
    npm run dev
    ```
 
-## Running The App
+## 🌐 Access Points
 
-### Backend
-```bash
-# From project root (with virtual environment activated)
-python backend/app.py
-```
-The backend runs at `http://localhost:5000`
+- **Frontend**: `http://localhost:5173`
+- **Backend API**: `http://localhost:5000`
+- **Admin Login**: Use credentials configured in backend
+- **Tenant Portal**: Register and await approval
 
-### Frontend  
-```bash
-cd frontend
-npm run dev
-```
-The frontend runs at `http://localhost:5173`
-
-**If port 5173 is busy:**
-```bash
-npm run dev -- --port 5176
-```
-
-## Project Layout
+## 📁 Project Structure
 
 ```
 RHMS_Project/
-├── backend/
-│   ├── app.py              # Main Flask application
-│   ├── schema.sql          # Database structure
-│   ├── templates/          # HTML templates
-│   └── static/            # CSS and images
-├── frontend/
-│   ├── src/
-│   │   ├── components/    # Reusable parts
-│   │   ├── pages/         # Different pages
-│   │   ├── api.js         # API calls
-│   │   └── main.jsx       # App starting point
-│   ├── public/            # Public files
-│   └── package.json       # Frontend packages
-├── requirements.txt       # Python packages
-└── README.md             # This file
+├── 📂 backend/
+│   ├── 🐍 app.py              # Main Flask application
+│   ├── 🗄️ schema.sql          # Database structure
+│   ├── 📄 templates/          # HTML templates
+│   └── 🎨 static/            # CSS and assets
+├── 📂 frontend/
+│   ├── 📂 src/
+│   │   ├── 🧩 components/    # Reusable UI components
+│   │   ├── 📄 pages/         # Application pages
+│   │   └── ⚡ main.jsx       # Application entry
+│   ├── 📂 public/            # Static assets
+│   └── 📦 package.json       # Dependencies
+├── 📋 requirements.txt       # Python packages
+└── 📖 README.md             # This guide
 ```
 
-## Settings
+## 🔐 Authentication & Authorization
 
-### Database
-Database connection is in `backend/app.py`:
+### Admin Access
+- Full system access
+- Manage properties and tenants
+- Approve/reject applications
+- View financial reports
+
+### Tenant Access
+- Registration requires approval
+- Limited access until approved
+- Personal dashboard and features
+- Payment and maintenance requests
+
+## 📊 API Endpoints
+
+### Authentication
+- `POST /api/tenant-login` - Tenant login
+- `GET /api/tenant-dashboard` - Tenant dashboard (authenticated)
+
+### Properties
+- `GET /api/houses` - List all properties
+- `POST /api/houses` - Add new property
+- `PUT /api/houses/<id>` - Update property
+- `DELETE /api/houses/<id>` - Remove property
+
+### Tenants
+- `GET /api/tenants` - List all tenants
+- `POST /api/tenants` - Register new tenant
+- `GET /api/pending-tenants` - View pending applications
+- `POST /api/approve-tenant/<id>` - Approve tenant application
+
+## 🎨 User Experience
+
+### Modern Design
+- Clean, intuitive interface
+- Responsive design for all devices
+- Smooth animations and transitions
+- Professional color scheme
+
+### User-Friendly Features
+- Real-time status updates
+- Clear approval workflows
+- Comprehensive error handling
+- Helpful validation messages
+
+## 🔧 Configuration
+
+### Database Settings
+Configure MySQL connection in `backend/app.py`:
 ```python
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
@@ -129,70 +154,55 @@ app.config['MYSQL_PASSWORD'] = ''
 app.config['MYSQL_DB'] = 'rhms'
 ```
 
-### Frontend-Backend Connection
-The backend accepts requests from:
+### CORS Settings
+Frontend origins are pre-configured for development:
 - `http://localhost:5173`
 - `http://127.0.0.1:5173`
 - `http://localhost:5176`
 - `http://127.0.0.1:5176`
 
-## Available API Calls
+## 🐛 Troubleshooting
 
-### Login & Security
-- `POST /api/login` - User login
-- `POST /api/logout` - User logout
+### Common Issues
 
-### Properties
-- `GET /api/houses` - Get all houses
-- `POST /api/houses` - Add new house
-- `PUT /api/houses/<id>` - Update house
-- `DELETE /api/houses/<id>` - Delete house
-
-### Tenants
-- `GET /api/tenants` - Get all tenants
-- `POST /api/tenants` - Add new tenant
-- `PUT /api/tenants/<id>` - Update tenant
-- `DELETE /api/tenants/<id>` - Delete tenant
-
-## Making Changes
-
-### Code Style
-- Frontend uses ESLint for clean JavaScript
-- Backend follows Python best practices
-
-### Testing
-```bash
-# Check frontend code
-cd frontend
-npm run lint
-
-# Add backend tests as needed
-python -m pytest backend/tests/
-```
-
-## Common Problems
-
-### Database Won't Connect
-- Make sure MySQL server is running
+**Database Connection Failed**
+- Ensure MySQL server is running
+- Verify database credentials
 - Check database name is 'rhms'
-- Verify username/password in backend/app.py
 
-### Frontend Shows Errors
-- Make sure backend is running on port 5000
-- Check browser console for specific errors
-- Try refreshing the page
+**Frontend Not Loading**
+- Confirm backend is running on port 5000
+- Check browser console for errors
+- Try clearing browser cache
 
-### Port Already in Use
+**Port Conflicts**
 - Change frontend port: `npm run dev -- --port 5176`
-- Stop other programs using ports 5000, 5173
+- Stop conflicting processes
 
-## Sharing Your Work
+**Tenant Registration Issues**
+- Check if house is vacant
+- Verify email format
+- Ensure all required fields are filled
 
-1. Fork the project
-2. Make your changes
-3. Test everything works
-4. Send a pull request
+## 🤝 Contributing
 
-## Need Help?
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-For questions or issues, use the GitHub issues page.
+## 📝 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## 📞 Support
+
+For questions, issues, or feature requests:
+- Create an issue on GitHub
+- Check existing documentation
+- Review troubleshooting guide
+
+---
+
+**Built with ❤️ for efficient property management**

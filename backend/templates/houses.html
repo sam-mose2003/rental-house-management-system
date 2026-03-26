@@ -172,7 +172,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for house in houses or [] %}
+        {% for house in houses %}
         <tr>
           <td>{{ house[1] }}</td>
           <td class="status-{{ house[2]|lower }}">{{ house[2] }}</td>

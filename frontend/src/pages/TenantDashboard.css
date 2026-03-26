@@ -11,6 +11,59 @@
   position: relative;
 }
 
+.approval-warning {
+  background: linear-gradient(135deg, #fff3cd, #ffeeba);
+  border: 2px solid #ffc107;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+}
+
+.warning-content h3 {
+  color: #856404;
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.warning-content p {
+  color: #856404;
+  margin: 0 0 1rem 0;
+  line-height: 1.6;
+}
+
+.restrictions-list h4 {
+  color: #856404;
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+
+.restrictions-list ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  list-style: none;
+}
+
+.restrictions-list li {
+  color: #856404;
+  margin: 0.25rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.alert-warning {
+  background: linear-gradient(135deg, #fff3cd, #ffeeba);
+  color: #856404;
+  border: 1px solid #ffc107;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
 .tenant-header {
   background: white;
   border-radius: 12px;
@@ -1049,7 +1102,7 @@
 
 .manual-payment-note {
   background: #e8f5e8;
-  border: 1px solid #d6d4c;
+  border: 1px solid #d6d4c4;
   border-radius: 12px;
   padding: 20px;
   margin-top: 15px;
@@ -1057,7 +1110,7 @@
 
 .manual-payment-note h6 {
   margin: 0 0 10px;
-  color: #d6d4c;
+  color: #2d5016;
   font-size: 1rem;
   font-weight: 600;
 }

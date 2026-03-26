@@ -25,37 +25,51 @@ def get_cursor():
 
 def _row_to_house(row):
     """Convert a house row to a dictionary"""
-    if len(row) >= 5:
-        return {
-            "id": row[0],
-            "house_number": row[1],
-            "status": row[2],
-            "price": float(row[3]) if row[3] is not None else 0.0,
-            "house_type": row[4] if row[4] is not None else "Single Room"
-        }
-    else:
-        # Fallback for old data structure
-        return {
-            "id": row[0],
-            "house_number": row[1],
-            "status": row[2],
-            "price": float(row[3]) if len(row) > 3 and row[3] is not None else 0.0,
-            "house_type": "Single Room"
-        }
+    if not row:
+        return None
+    
+    try:
+        if len(row) >= 5:
+            return {
+                "id": int(row[0]),
+                "house_number": str(row[1]),
+                "status": str(row[2]),
+                "price": float(row[3]) if row[3] is not None else 0.0,
+                "house_type": str(row[4]) if row[4] is not None else "Single Room"
+            }
+        else:
+            # Fallback for old data structure
+            return {
+                "id": int(row[0]),
+                "house_number": str(row[1]),
+                "status": str(row[2]),
+                "price": float(row[3]) if len(row) > 3 and row[3] is not None else 0.0,
+                "house_type": "Single Room"
+            }
+    except Exception as e:
+        print(f"Error converting house row: {e}")
+        return None
 
 
 def _row_to_tenant(row):
     # tenants: id, name, national_id, phone, email, house_number, move_in_date, status
-    return {
-        "id": row[0],
-        "name": row[1],
-        "national_id": row[2],
-        "phone": row[3],
-        "email": row[4],
-        "house_number": row[5],
-        "move_in_date": row[6].isoformat() if row[6] else None,
-        "status": row[7] if len(row) > 7 else 'approved',
-    }
+    if not row or len(row) < 6:
+        return None
+    
+    try:
+        return {
+            "id": int(row[0]),
+            "name": str(row[1]),
+            "national_id": str(row[2]),
+            "phone": str(row[3]),
+            "email": str(row[4]),
+            "house_number": str(row[5]),
+            "move_in_date": row[6].strftime('%Y-%m-%d') if len(row) > 6 and row[6] else None,
+            "status": str(row[7]) if len(row) > 7 else 'approved',
+        }
+    except Exception as e:
+        print(f"Error converting tenant row: {e}")
+        return None
 
 
 @app.route('/')
@@ -240,18 +254,173 @@ def delete_tenant(tenant_id: int):
     return redirect(url_for('tenants'))
 
 
-@app.route('/houses')
+@app.route('/houses', methods=['GET', 'POST'])
 def houses():
     if not session.get('logged_in'):
         return redirect(url_for('home'))
+    
+    if request.method == 'POST':
+        # Handle adding a new house
+        try:
+            house_number = request.form.get('house_number', '').strip()
+            price = request.form.get('price', 10000.00)
+            house_type = request.form.get('house_type', 'Single Room')
+            status = request.form.get('status', 'Vacant')
+            
+            if not house_number:
+                return render_template("houses.html", houses=[], error="House number is required")
+            
+            cur = get_cursor()
+            cur.execute(
+                "INSERT INTO houses (house_number, status, price, house_type) VALUES (%s, %s, %s, %s)",
+                (house_number, status, price, house_type)
+            )
+            mysql.connection.commit()
+            cur.close()
+            
+            print(f"Successfully added house: {house_number}")
+            flash("House added successfully!", "success")
+            
+            # Redirect to refresh the page
+            return redirect(url_for('houses'))
+        except Exception as e:
+            print(f"Error adding house: {e}")
+            return render_template("houses.html", houses=[], error="Could not add house")
+    
+    # Handle GET request - display houses and pending requests
+    houses_data = []
+    pending_requests = []
+    
     try:
         cur = get_cursor()
+        # Fetch houses
         cur.execute("SELECT * FROM houses")
-        data = cur.fetchall()
+        houses_data = cur.fetchall()
+        
+        # Fetch pending tenant requests
+        cur.execute("""
+            SELECT id, name, house_number, national_id, phone, email, move_in_date 
+            FROM tenants 
+            WHERE status = 'pending' 
+            ORDER BY move_in_date DESC
+        """)
+        pending_requests = cur.fetchall()
+        
         cur.close()
+        print(f"Retrieved {len(houses_data)} houses from database")
+        print(f"Retrieved {len(pending_requests)} pending requests")
+        for house in houses_data:
+            print(f"  House: {house}")
     except MySQLdb.ProgrammingError:
-        data = []
-    return render_template("houses.html", houses=data)
+        houses_data = []
+        pending_requests = []
+        print("Database error retrieving data")
+    
+    return render_template("houses.html", houses=houses_data, pending_requests=pending_requests)
+
+
+@app.route('/delete_house', methods=['POST'])
+def delete_house():
+    if not session.get('logged_in'):
+        return redirect(url_for('home'))
+    
+    house_id = request.form.get('house_id')
+    if not house_id:
+        flash("House ID is required", "error")
+        return redirect(url_for('houses'))
+    
+    try:
+        cur = get_cursor()
+        # Check if house exists
+        cur.execute("SELECT house_number FROM houses WHERE id = %s", (house_id,))
+        house = cur.fetchone()
+        if not house:
+            flash("House not found", "error")
+            cur.close()
+            return redirect(url_for('houses'))
+        
+        # Check if house is occupied by a tenant
+        cur.execute("SELECT id FROM tenants WHERE house_number = %s AND status = 'approved'", (house[0],))
+        tenant = cur.fetchone()
+        if tenant:
+            flash("Cannot delete house that is occupied by a tenant", "error")
+            cur.close()
+            return redirect(url_for('houses'))
+        
+        # Delete house
+        cur.execute("DELETE FROM houses WHERE id = %s", (house_id,))
+        mysql.connection.commit()
+        cur.close()
+        flash("House deleted successfully", "success")
+        
+    except Exception as e:
+        print(f"Error deleting house: {e}")
+        flash("Error deleting house", "error")
+    
+    return redirect(url_for('houses'))
+
+
+@app.route('/approve_tenant_request', methods=['POST'])
+def approve_tenant_request():
+    if not session.get('logged_in'):
+        return redirect(url_for('home'))
+    
+    tenant_id = request.form.get('tenant_id')
+    if not tenant_id:
+        flash("Tenant ID is required", "error")
+        return redirect(url_for('houses'))
+    
+    try:
+        cur = get_cursor()
+        # Update tenant status to approved
+        cur.execute("UPDATE tenants SET status = 'approved' WHERE id = %s", (tenant_id,))
+        
+        # Update house status to occupied
+        cur.execute("UPDATE houses SET status = 'Occupied' WHERE house_number = (SELECT house_number FROM tenants WHERE id = %s)", (tenant_id,))
+        
+        mysql.connection.commit()
+        cur.close()
+        flash("Tenant request approved successfully", "success")
+        
+    except Exception as e:
+        print(f"Error approving tenant request: {e}")
+        flash("Error approving tenant request", "error")
+    
+    return redirect(url_for('houses'))
+
+
+@app.route('/reject_tenant_request', methods=['POST'])
+def reject_tenant_request():
+    if not session.get('logged_in'):
+        return redirect(url_for('home'))
+    
+    tenant_id = request.form.get('tenant_id')
+    if not tenant_id:
+        flash("Tenant ID is required", "error")
+        return redirect(url_for('houses'))
+    
+    try:
+        cur = get_cursor()
+        # Get house number before deleting tenant
+        cur.execute("SELECT house_number FROM tenants WHERE id = %s", (tenant_id,))
+        tenant = cur.fetchone()
+        
+        # Delete tenant
+        cur.execute("DELETE FROM tenants WHERE id = %s", (tenant_id,))
+        
+        # Update house status to vacant (if tenant existed)
+        if tenant:
+            cur.execute("UPDATE houses SET status = 'Vacant' WHERE house_number = %s", (tenant[0],))
+        
+        mysql.connection.commit()
+        cur.close()
+        flash("Tenant request rejected successfully", "success")
+        
+    except Exception as e:
+        print(f"Error rejecting tenant request: {e}")
+        flash("Error rejecting tenant request", "error")
+    
+    return redirect(url_for('houses'))
 
 
 @app.route('/add_payment', methods=['GET', 'POST'])
@@ -416,24 +585,99 @@ def api_dashboard_stats():
         return jsonify({"error": "Could not fetch dashboard stats"}), 500
 
 
-@app.route('/api/tenants')
-def api_get_tenants():
-    """Get all approved tenants"""
-    try:
-        cur = get_cursor()
-        cur.execute("""
-            SELECT id, name, national_id, phone, email, house_number, move_in_date, status
-            FROM tenants 
-            WHERE status != 'pending' OR status IS NULL
-            ORDER BY id DESC
-        """)
-        tenants = []
-        for row in cur.fetchall():
-            tenants.append(_row_to_tenant(row))
-        cur.close()
-        return jsonify(tenants)
-    except Exception as e:
-        return jsonify({"error": "Could not fetch tenants"}), 500
+@app.route('/api/tenants', methods=['GET', 'POST'])
+def api_tenants():
+    """Handle GET and POST for tenants"""
+    if request.method == 'GET':
+        """Get all approved tenants"""
+        try:
+            cur = get_cursor()
+            cur.execute("""
+                SELECT id, name, national_id, phone, email, house_number, move_in_date, status
+                FROM tenants 
+                WHERE status != 'pending' OR status IS NULL
+                ORDER BY id DESC
+            """)
+            tenants = []
+            for row in cur.fetchall():
+                tenants.append(_row_to_tenant(row))
+            cur.close()
+            return jsonify(tenants)
+        except Exception as e:
+            return jsonify({"error": "Could not fetch tenants"}), 500
+    
+    elif request.method == 'POST':
+        """Register a new tenant"""
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify({"error": "No data received"}), 400
+            
+            # Extract and validate fields
+            name = str(data.get('name', '')).strip()
+            national_id = str(data.get('national_id', '')).strip()
+            phone = str(data.get('phone', '')).strip()
+            email = str(data.get('email', '')).strip()
+            house_number = str(data.get('house_number', '')).strip()
+            move_in_date = str(data.get('move_in_date', '')).strip()
+            
+            # Validate required fields
+            if not all([name, national_id, phone, email, house_number, move_in_date]):
+                return jsonify({"error": "All fields are required"}), 400
+            
+            # Basic email validation
+            if '@' not in email or '.' not in email:
+                return jsonify({"error": "Invalid email address"}), 400
+            
+            cur = get_cursor()
+            
+            # Check if house exists and is vacant
+            cur.execute("SELECT status FROM houses WHERE house_number = %s", (house_number,))
+            house = cur.fetchone()
+            if not house:
+                cur.close()
+                return jsonify({"error": "House not found"}), 400
+            if house[0] != 'Vacant':
+                cur.close()
+                return jsonify({"error": "House is not available"}), 400
+            
+            # Check if email already exists
+            cur.execute("SELECT id FROM tenants WHERE email = %s", (email,))
+            if cur.fetchone():
+                cur.close()
+                return jsonify({"error": "Email already registered"}), 400
+            
+            # Insert tenant with pending status
+            cur.execute("""
+                INSERT INTO tenants(name, national_id, phone, email, house_number, move_in_date, status) 
+                VALUES(%s, %s, %s, %s, %s, %s, %s)
+            """, (name, national_id, phone, email, house_number, move_in_date, 'pending'))
+            
+            mysql.connection.commit()
+            
+            # Get created tenant
+            tenant_id = cur.lastrowid
+            cur.execute("""
+                SELECT id, name, national_id, phone, email, house_number, move_in_date, status
+                FROM tenants WHERE id = %s
+            """, (tenant_id,))
+            row = cur.fetchone()
+            
+            tenant = _row_to_tenant(row)
+            cur.close()
+            
+            if not tenant:
+                return jsonify({"error": "Failed to process tenant data"}), 500
+            
+            return jsonify({
+                "success": True, 
+                "message": "Tenant registration submitted successfully! Your application is pending approval.",
+                "tenant": tenant
+            }), 201
+            
+        except Exception as e:
+            print(f"Registration error: {e}")
+            return jsonify({"error": f"Registration failed: {str(e)}"}), 500
 
 
 @app.route('/api/pending-tenants')
@@ -604,45 +848,73 @@ def api_resolve_maintenance(request_id):
 
 # ===== HOUSE MANAGEMENT APIS =====
 
-@app.route('/api/houses', methods=['POST'])
-def api_add_house():
-    """Add a new house"""
-    try:
-        data = request.get_json()
-        house_number = data.get('house_number', '').strip()
-        status = data.get('status', 'Vacant')
-        price = data.get('price', 10000.00)  # Default price if not provided
-        house_type = data.get('house_type', 'Single Room')  # Default type if not provided
-        
-        if not house_number:
-            return jsonify({"error": "House number is required"}), 400
-        
-        cur = get_cursor()
-        
-        # Insert new house with price and type
-        cur.execute(
-            "INSERT INTO houses (house_number, status, price, house_type) VALUES (%s, %s, %s, %s)",
-            (house_number, status, price, house_type)
-        )
-        mysql.connection.commit()
-        
-        # Get created house
-        house_id = cur.lastrowid
-        cur.execute("SELECT * FROM houses WHERE id = %s", (house_id,))
-        row = cur.fetchone()
-        
-        house = {
-            "id": row[0],
-            "house_number": row[1],
-            "status": row[2],
-            "price": float(row[3]) if len(row) > 3 else 10000.00,
-            "house_type": row[4] if len(row) > 4 else "Single Room"
-        }
-        
-        cur.close()
-        return jsonify(house), 201
-    except Exception as e:
-        return jsonify({"error": "Could not add house"}), 500
+@app.route('/api/houses', methods=['GET', 'POST'])
+def api_houses():
+    """Handle GET and POST for houses"""
+    if request.method == 'GET':
+        # Get all houses
+        try:
+            cur = get_cursor()
+            cur.execute("SELECT * FROM houses")
+            houses = cur.fetchall()
+            cur.close()
+            
+            # Convert to list of dictionaries
+            house_list = []
+            for house in houses:
+                house_list.append(_row_to_house(house))
+            
+            return jsonify(house_list)
+        except Exception as e:
+            return jsonify({"error": "Could not fetch houses"}), 500
+    
+    elif request.method == 'POST':
+        # Add a new house
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify({"error": "No data received"}), 400
+            
+            house_number = str(data.get('house_number', '')).strip()
+            status = str(data.get('status', 'Vacant')).strip()
+            
+            # Handle price conversion
+            price = data.get('price', 10000.00)
+            try:
+                price = float(price)
+            except (ValueError, TypeError):
+                price = 10000.00
+            
+            house_type = str(data.get('house_type', 'Single Room')).strip()
+            
+            if not house_number:
+                return jsonify({"error": "House number is required"}), 400
+            
+            cur = get_cursor()
+            
+            # Insert new house with price and type
+            cur.execute(
+                "INSERT INTO houses (house_number, status, price, house_type) VALUES (%s, %s, %s, %s)",
+                (house_number, status, price, house_type)
+            )
+            mysql.connection.commit()
+            
+            # Get created house
+            house_id = cur.lastrowid
+            cur.execute("SELECT * FROM houses WHERE id = %s", (house_id,))
+            row = cur.fetchone()
+            
+            house = _row_to_house(row)
+            cur.close()
+            
+            if not house:
+                return jsonify({"error": "Failed to process house data"}), 500
+            
+            return jsonify(house)
+            
+        except Exception as e:
+            print(f"House creation error: {e}")
+            return jsonify({"error": f"Failed to add house: {str(e)}"}), 500
 
 
 @app.route('/api/houses/<int:house_id>', methods=['PUT'])
@@ -846,6 +1118,166 @@ def api_approved_tenants():
         tenants_list = []
     
     return jsonify(tenants_list)
+
+
+@app.route('/api/tenant-login', methods=['POST'])
+def api_tenant_login():
+    """Handle tenant login"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data received"}), 400
+            
+        email = str(data.get('email', '')).strip()
+        password = str(data.get('password', '')).strip()
+        
+        if not email or not password:
+            return jsonify({"error": "Email and password are required"}), 400
+        
+        # Basic email validation
+        if '@' not in email or '.' not in email:
+            return jsonify({"error": "Invalid email address"}), 400
+        
+        cur = get_cursor()
+        
+        # Find tenant by email (any status - allow login before approval)
+        query = """
+        SELECT id, name, national_id, phone, email, house_number, move_in_date, status
+        FROM tenants 
+        WHERE email = %s
+        """
+        cur.execute(query, (email,))
+        tenant = cur.fetchone()
+        cur.close()
+        
+        if not tenant:
+            return jsonify({"error": "Invalid credentials"}), 401
+        
+        # Convert tenant data
+        tenant_data = _row_to_tenant(tenant)
+        if not tenant_data:
+            return jsonify({"error": "Error processing tenant data"}), 500
+        
+        # For now, use national_id as password (as mentioned in frontend)
+        if password != tenant_data['national_id']:
+            return jsonify({"error": "Invalid credentials"}), 401
+        
+        # Generate a simple token (in production, use JWT)
+        import random
+        token = f"tenant_{tenant_data['id']}_{random.randint(1000, 9999)}"
+        
+        return jsonify({
+            "success": True,
+            "token": token,
+            "tenant": tenant_data
+        })
+        
+    except Exception as e:
+        print(f"Tenant login error: {e}")
+        return jsonify({"error": "Login failed. Please try again."}), 500
+
+
+@app.route('/api/tenant-dashboard', methods=['GET'])
+def api_tenant_dashboard():
+    """Get tenant dashboard data with approval-based restrictions"""
+    try:
+        # Get token from header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"error": "Authorization required"}), 401
+        
+        token = auth_header.split(' ')[1]
+        
+        # Extract tenant ID from token (simple approach)
+        try:
+            tenant_id = int(token.split('_')[1])
+        except:
+            return jsonify({"error": "Invalid token"}), 401
+        
+        cur = get_cursor()
+        
+        # Get tenant info
+        cur.execute("""
+            SELECT id, name, national_id, phone, email, house_number, move_in_date, status
+            FROM tenants WHERE id = %s
+        """, (tenant_id,))
+        tenant = cur.fetchone()
+        
+        if not tenant:
+            cur.close()
+            return jsonify({"error": "Tenant not found"}), 404
+        
+        tenant_data = _row_to_tenant(tenant)
+        
+        # Base dashboard data
+        dashboard_data = {
+            "tenant": tenant_data,
+            "is_approved": tenant_data['status'] == 'approved',
+            "message": "Your application is pending approval" if tenant_data['status'] == 'pending' else "Welcome to your dashboard"
+        }
+        
+        if tenant_data['status'] == 'approved':
+            # Full dashboard data for approved tenants
+            try:
+                # Get payment history
+                cur.execute("""
+                    SELECT amount, payment_date, payment_method
+                    FROM payments 
+                    WHERE tenant_id = %s 
+                    ORDER BY payment_date DESC 
+                    LIMIT 5
+                """, (tenant_id,))
+                payments = cur.fetchall()
+                
+                # Get maintenance requests
+                cur.execute("""
+                    SELECT issue, status
+                    FROM maintenance 
+                    WHERE tenant = %s 
+                    ORDER BY id DESC 
+                    LIMIT 5
+                """, (tenant_data['name'],))
+                maintenance = cur.fetchall()
+                
+                dashboard_data.update({
+                    "payments": [
+                        {"amount": float(p[0]), "date": p[1].strftime('%Y-%m-%d'), "method": p[2]}
+                        for p in payments
+                    ],
+                    "maintenance_requests": [
+                        {"issue": m[0], "status": m[1]}
+                        for m in maintenance
+                    ],
+                    "can_make_payments": True,
+                    "can_request_maintenance": True
+                })
+                
+            except Exception as e:
+                print(f"Error getting tenant data: {e}")
+                dashboard_data.update({
+                    "payments": [],
+                    "maintenance_requests": []
+                })
+        else:
+            # Restricted dashboard for pending tenants
+            dashboard_data.update({
+                "payments": [],
+                "maintenance_requests": [],
+                "can_make_payments": False,
+                "can_request_maintenance": False,
+                "restrictions": [
+                    "Cannot make payments until approved",
+                    "Cannot request maintenance until approved",
+                    "Limited access until approval"
+                ]
+            })
+        
+        cur.close()
+        return jsonify(dashboard_data)
+        
+    except Exception as e:
+        print(f"Dashboard error: {e}")
+        return jsonify({"error": "Failed to load dashboard"}), 500
 
 
 if __name__ == "__main__":

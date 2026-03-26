@@ -38,31 +38,39 @@ const TenantDashboard = () => {
   const loadTenantData = async (tenantId) => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('tenantToken');
       
-      // Load tenant payments
-      const paymentsResponse = await fetch(`/api/tenant-payments/${tenantId}`);
-      if (paymentsResponse.ok) {
-        const paymentsData = await paymentsResponse.json();
-        setPayments(paymentsData || []);
-      }
+      // Load dashboard data from new API
+      const dashboardResponse = await fetch('http://localhost:5000/api/tenant-dashboard', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       
-      // Load tenant maintenance requests
-      const maintenanceResponse = await fetch(`/api/tenant-maintenance/${tenantId}`);
-      if (maintenanceResponse.ok) {
-        const maintenanceData = await maintenanceResponse.json();
-        setMaintenanceRequests(maintenanceData || []);
-      }
-      
-      // Load tenant balance information
-      const balanceResponse = await fetch(`/api/tenant-balance/${tenantId}`);
-      if (balanceResponse.ok) {
-        const balanceData = await balanceResponse.json();
-        setBalanceInfo(balanceData);
+      if (dashboardResponse.ok) {
+        const dashboardData = await dashboardResponse.json();
+        setTenantInfo(dashboardData.tenant);
+        setPayments(dashboardData.payments || []);
+        setMaintenanceRequests(dashboardData.maintenance_requests || []);
+        
+        // Update tenant info in localStorage
+        localStorage.setItem('tenantInfo', JSON.stringify(dashboardData.tenant));
+        
+        // Show approval status message
+        if (!dashboardData.is_approved) {
+          setMessage(dashboardData.message);
+          setMessageType('warning');
+        }
+      } else {
+        const errorData = await dashboardResponse.json();
+        setMessage(errorData.error || 'Failed to load dashboard');
+        setMessageType('error');
       }
       
     } catch (error) {
       console.error('Error loading tenant data:', error);
-      setMessage('Failed to load your data. Please try again.', 'error');
+      setMessage('Network error. Please try again.');
+      setMessageType('error');
     } finally {
       setLoading(false);
     }
@@ -312,8 +320,25 @@ const TenantDashboard = () => {
         </div>
       </div>
 
+      {tenantInfo.status !== 'approved' && (
+        <div className="approval-warning">
+          <div className="warning-content">
+            <h3>⏳ Account Pending Approval</h3>
+            <p>Your tenant registration is currently pending approval by the administrator. You can view your information but cannot make payments or submit maintenance requests until approved.</p>
+            <div className="restrictions-list">
+              <h4>Restricted Features:</h4>
+              <ul>
+                <li>❌ Make payments</li>
+                <li>❌ Submit maintenance requests</li>
+                <li>❌ Access full dashboard features</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
       {message && (
-        <div className={`alert ${messageType === 'success' ? 'alert-success' : 'alert-error'}`}>
+        <div className={`alert ${messageType === 'success' ? 'alert-success' : messageType === 'warning' ? 'alert-warning' : 'alert-error'}`}>
           {message}
         </div>
       )}
