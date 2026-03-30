@@ -5,6 +5,7 @@ import hashlib
 import time
 import os
 from flask_cors import CORS
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'rhms_secret_key'
@@ -491,10 +492,45 @@ def payments():
     return render_template("payments.html", payments=data)
 
 
-@app.route('/maintenance')
+@app.route('/maintenance', methods=['GET', 'POST'])
 def maintenance():
     if not session.get('logged_in'):
         return redirect(url_for('home'))
+    
+    if request.method == 'POST':
+        # Handle adding new maintenance request
+        tenant = request.form.get('tenant')
+        house_number = request.form.get('house_number')
+        issue = request.form.get('issue')
+        status = request.form.get('status', 'Open')
+        
+        if not all([house_number, issue]):
+            try:
+                cur = get_cursor()
+                cur.execute("SELECT house_number FROM houses")
+                houses = cur.fetchall()
+                cur.close()
+            except MySQLdb.ProgrammingError:
+                houses = []
+            return render_template("maintenance.html", houses=houses, maintenance_list=[], error="House number and issue are required")
+        
+        try:
+            cur = get_cursor()
+            cur.execute(
+                "INSERT INTO maintenance(tenant, house_number, issue, status) VALUES(%s,%s,%s,%s)",
+                (tenant, house_number, issue, status)
+            )
+            mysql.connection.commit()
+            cur.close()
+            flash("Maintenance request added successfully.", "success")
+            return redirect(url_for('maintenance'))
+        except MySQLdb.ProgrammingError:
+            mysql.connection.rollback()
+            flash("Error adding maintenance request.", "error")
+        finally:
+            cur.close()
+    
+    # Handle GET request - display maintenance requests
     try:
         cur = get_cursor()
         cur.execute("SELECT * FROM maintenance ORDER BY id DESC")
@@ -502,7 +538,86 @@ def maintenance():
         cur.close()
     except MySQLdb.ProgrammingError:
         data = []
-    return render_template("maintenance.html", maintenance=data)
+    
+    # Also get houses for the form dropdown
+    try:
+        cur = get_cursor()
+        cur.execute("SELECT house_number FROM houses")
+        houses = cur.fetchall()
+        cur.close()
+    except MySQLdb.ProgrammingError:
+        houses = []
+    
+    return render_template("maintenance.html", maintenance_list=data, houses=houses)
+
+
+@app.route('/edit_maintenance/<int:maintenance_id>', methods=['GET', 'POST'])
+def edit_maintenance(maintenance_id):
+    if not session.get('logged_in'):
+        return redirect(url_for('home'))
+    
+    try:
+        cur = get_cursor()
+        
+        if request.method == 'POST':
+            # Update maintenance request
+            tenant = request.form.get('tenant')
+            house_number = request.form.get('house_number')
+            issue = request.form.get('issue')
+            status = request.form.get('status')
+            
+            if not all([house_number, issue]):
+                cur.execute("SELECT * FROM maintenance WHERE id = %s", (maintenance_id,))
+                maintenance_data = cur.fetchone()
+                cur.execute("SELECT house_number FROM houses")
+                houses = cur.fetchall()
+                cur.close()
+                return render_template("maintenance_edit.html", m=maintenance_data, houses=houses, error="House number and issue are required")
+            
+            cur.execute(
+                "UPDATE maintenance SET tenant=%s, house_number=%s, issue=%s, status=%s WHERE id=%s",
+                (tenant, house_number, issue, status, maintenance_id)
+            )
+            mysql.connection.commit()
+            cur.close()
+            flash("Maintenance request updated successfully.", "success")
+            return redirect(url_for('maintenance'))
+        
+        else:
+            # GET request - show edit form
+            cur.execute("SELECT * FROM maintenance WHERE id = %s", (maintenance_id,))
+            maintenance_data = cur.fetchone()
+            cur.execute("SELECT house_number FROM houses")
+            houses = cur.fetchall()
+            cur.close()
+            
+            if not maintenance_data:
+                flash("Maintenance request not found.", "error")
+                return redirect(url_for('maintenance'))
+            
+            return render_template("maintenance_edit.html", m=maintenance_data, houses=houses)
+            
+    except MySQLdb.ProgrammingError as e:
+        print(f"Database error: {e}")
+        flash("Error editing maintenance request.", "error")
+        return redirect(url_for('maintenance'))
+
+
+@app.route('/delete_maintenance/<int:maintenance_id>', methods=['POST'])
+def delete_maintenance(maintenance_id):
+    if not session.get('logged_in'):
+        return redirect(url_for('home'))
+    
+    try:
+        cur = get_cursor()
+        cur.execute("DELETE FROM maintenance WHERE id = %s", (maintenance_id,))
+        mysql.connection.commit()
+        cur.close()
+        flash("Maintenance request deleted successfully.", "success")
+    except MySQLdb.ProgrammingError:
+        flash("Error deleting maintenance request.", "error")
+    
+    return redirect(url_for('maintenance'))
 
 
 @app.route('/add_maintenance', methods=['GET', 'POST'])
@@ -535,10 +650,136 @@ def add_maintenance():
     return render_template("add_maintenance.html")
 
 
-@app.route('/reports')
+@app.route('/reports', methods=['GET', 'POST'])
 def reports():
     if not session.get('logged_in'):
         return redirect(url_for('home'))
+    
+    if request.method == 'POST':
+        report_type = request.form.get('report_type')
+        report_data = None
+        
+        try:
+            cur = get_cursor()
+            
+            if report_type == 'rent_collection':
+                # Rent collection report
+                cur.execute("""
+                    SELECT p.id, t.name, p.amount, p.payment_date, p.payment_method
+                    FROM payments p
+                    JOIN tenants t ON t.id = p.tenant_id
+                    ORDER BY p.payment_date DESC
+                    LIMIT 50
+                """)
+                payments = cur.fetchall()
+                
+                total_collected = sum(p[2] for p in payments) if payments else 0
+                average_payment = total_collected / len(payments) if payments else 0
+                
+                report_data = {
+                    'payments': payments,
+                    'total_collected': total_collected,
+                    'average_payment': average_payment
+                }
+                
+            elif report_type == 'occupancy':
+                # Occupancy status report
+                cur.execute("""
+                    SELECT h.id, h.house_number, h.status, t.name
+                    FROM houses h
+                    LEFT JOIN tenants t ON t.house_number = h.house_number AND t.status = 'approved'
+                    ORDER BY h.house_number
+                """)
+                houses = cur.fetchall()
+                
+                total_houses = len(houses)
+                occupied = sum(1 for h in houses if h[2] == 'Occupied')
+                vacant = total_houses - occupied
+                occupancy_rate = round((occupied / total_houses * 100), 1) if total_houses > 0 else 0
+                
+                report_data = {
+                    'houses': houses,
+                    'total_houses': total_houses,
+                    'occupied': occupied,
+                    'vacant': vacant,
+                    'occupancy_rate': occupancy_rate
+                }
+                
+            elif report_type == 'outstanding':
+                # Outstanding rent report
+                cur.execute("""
+                    SELECT t.id, t.name, t.house_number, h.price, MAX(p.payment_date), 
+                           h.price - COALESCE(SUM(p.amount), 0) as outstanding
+                    FROM tenants t
+                    JOIN houses h ON h.house_number = t.house_number
+                    LEFT JOIN payments p ON p.tenant_id = t.id
+                    WHERE t.status = 'approved'
+                    GROUP BY t.id, t.name, t.house_number, h.price
+                    HAVING outstanding > 0
+                """)
+                tenants = cur.fetchall()
+                
+                total_outstanding = sum(t[5] for t in tenants) if tenants else 0
+                
+                report_data = {
+                    'tenants': tenants,
+                    'total_outstanding': total_outstanding
+                }
+                
+            elif report_type == 'tenant_list':
+                # Tenant list report
+                cur.execute("""
+                    SELECT id, name, house_number, national_id, email, status, move_in_date
+                    FROM tenants
+                    ORDER BY name
+                """)
+                tenants = cur.fetchall()
+                
+                approved_count = sum(1 for t in tenants if t[5] == 'approved')
+                pending_count = sum(1 for t in tenants if t[5] == 'pending')
+                
+                report_data = {
+                    'tenants': tenants,
+                    'approved_count': approved_count,
+                    'pending_count': pending_count
+                }
+                
+            elif report_type == 'payment_summary':
+                # Payment summary report
+                cur.execute("""
+                    SELECT payment_method, COUNT(*) as count, SUM(amount) as total
+                    FROM payments
+                    GROUP BY payment_method
+                    ORDER BY total DESC
+                """)
+                methods = cur.fetchall()
+                
+                cur.execute("SELECT COUNT(*), SUM(amount) FROM payments")
+                total_result = cur.fetchone()
+                total_count = total_result[0] or 0
+                total_amount = total_result[1] or 0
+                average_amount = total_amount / total_count if total_count > 0 else 0
+                
+                method_breakdown = []
+                for method in methods:
+                    percentage = round((method[2] / total_amount * 100), 1) if total_amount > 0 else 0
+                    method_breakdown.append((method[0], method[1], method[2], percentage))
+                
+                report_data = {
+                    'total_count': total_count,
+                    'total_amount': total_amount,
+                    'average_amount': average_amount,
+                    'method_breakdown': method_breakdown
+                }
+            
+            cur.close()
+            
+        except Exception as e:
+            print(f"Report generation error: {e}")
+            report_data = None
+        
+        return render_template("reports.html", report_data=report_data, report_type=report_type)
+    
     return render_template("reports.html")
 
 
@@ -546,6 +787,55 @@ def reports():
 def logout():
     session.clear()
     return redirect(url_for('home'))
+
+
+@app.errorhandler(404)
+def not_found(error):
+    if request.path.startswith('/api/'):
+        return jsonify({
+            "error": "The requested resource was not found. Please check the URL and try again.",
+            "code": "RESOURCE_NOT_FOUND"
+        }), 404
+    return render_template("404.html"), 404
+
+
+@app.errorhandler(500)
+def internal_error(error):
+    if request.path.startswith('/api/'):
+        return jsonify({
+            "error": "Our server encountered an unexpected error. Please try again in a few minutes.",
+            "code": "INTERNAL_ERROR"
+        }), 500
+    return render_template("500.html"), 500
+
+
+@app.errorhandler(400)
+def bad_request(error):
+    if request.path.startswith('/api/'):
+        return jsonify({
+            "error": "The request was invalid. Please check your input and try again.",
+            "code": "BAD_REQUEST"
+        }), 400
+    return render_template("400.html"), 400
+
+
+@app.errorhandler(403)
+def forbidden(error):
+    if request.path.startswith('/api/'):
+        return jsonify({
+            "error": "You don't have permission to access this resource.",
+            "code": "FORBIDDEN"
+        }), 403
+    return render_template("403.html"), 403
+
+
+@app.route('/api/health')
+def health_check():
+    return jsonify({
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "service": "RHMS Backend"
+    }), 200
 
 
 # ===== API ROUTES =====
@@ -1179,16 +1469,13 @@ def api_tenant_login():
 
 @app.route('/api/tenant-dashboard', methods=['GET'])
 def api_tenant_dashboard():
-    """Get tenant dashboard data with approval-based restrictions"""
     try:
-        # Get token from header
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({"error": "Authorization required"}), 401
         
         token = auth_header.split(' ')[1]
         
-        # Extract tenant ID from token (simple approach)
         try:
             tenant_id = int(token.split('_')[1])
         except:
@@ -1196,7 +1483,6 @@ def api_tenant_dashboard():
         
         cur = get_cursor()
         
-        # Get tenant info
         cur.execute("""
             SELECT id, name, national_id, phone, email, house_number, move_in_date, status
             FROM tenants WHERE id = %s
@@ -1209,7 +1495,6 @@ def api_tenant_dashboard():
         
         tenant_data = _row_to_tenant(tenant)
         
-        # Base dashboard data
         dashboard_data = {
             "tenant": tenant_data,
             "is_approved": tenant_data['status'] == 'approved',
@@ -1217,9 +1502,14 @@ def api_tenant_dashboard():
         }
         
         if tenant_data['status'] == 'approved':
-            # Full dashboard data for approved tenants
             try:
-                # Get payment history
+                cur.execute("""
+                    SELECT house_number, house_type, price
+                    FROM houses 
+                    WHERE house_number = %s
+                """, (tenant_data['house_number'],))
+                house_info = cur.fetchone()
+                
                 cur.execute("""
                     SELECT amount, payment_date, payment_method
                     FROM payments 
@@ -1229,7 +1519,11 @@ def api_tenant_dashboard():
                 """, (tenant_id,))
                 payments = cur.fetchall()
                 
-                # Get maintenance requests
+                total_paid = sum(p[0] for p in payments) if payments else 0
+                house_price = house_info[2] if house_info else 0
+                balance = house_price - total_paid
+                payment_status = "Paid" if balance <= 0 else "Due"
+                
                 cur.execute("""
                     SELECT issue, status
                     FROM maintenance 
@@ -1240,12 +1534,20 @@ def api_tenant_dashboard():
                 maintenance = cur.fetchall()
                 
                 dashboard_data.update({
+                    "balanceInfo": {
+                        "house_number": house_info[0] if house_info else tenant_data['house_number'],
+                        "house_type": house_info[1] if house_info else "Not assigned",
+                        "house_price": house_price,
+                        "total_paid": total_paid,
+                        "balance": balance,
+                        "payment_status": payment_status
+                    },
                     "payments": [
                         {"amount": float(p[0]), "date": p[1].strftime('%Y-%m-%d'), "method": p[2]}
                         for p in payments
                     ],
                     "maintenance_requests": [
-                        {"issue": m[0], "status": m[1]}
+                        {"issue": m[0], "status": m[1], "date": "Submitted recently"}
                         for m in maintenance
                     ],
                     "can_make_payments": True,
@@ -1259,7 +1561,6 @@ def api_tenant_dashboard():
                     "maintenance_requests": []
                 })
         else:
-            # Restricted dashboard for pending tenants
             dashboard_data.update({
                 "payments": [],
                 "maintenance_requests": [],
@@ -1277,8 +1578,4 @@ def api_tenant_dashboard():
         
     except Exception as e:
         print(f"Dashboard error: {e}")
-        return jsonify({"error": "Failed to load dashboard"}), 500
-
-
-if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=5000)
+        return jsonify({"error": "Failed to load dashboard data"}), 500

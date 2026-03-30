@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { submitMaintenanceRequest } from '../utils/api';
 import './TenantDashboard.css';
+import '../components/LoadingSkeleton.css';
 
 const TenantDashboard = () => {
   const navigate = useNavigate();
@@ -38,9 +40,9 @@ const TenantDashboard = () => {
   const loadTenantData = async (tenantId) => {
     try {
       setLoading(true);
+      setMessage(null);
       const token = localStorage.getItem('tenantToken');
       
-      // Load dashboard data from new API
       const dashboardResponse = await fetch('http://localhost:5000/api/tenant-dashboard', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -53,23 +55,29 @@ const TenantDashboard = () => {
         setPayments(dashboardData.payments || []);
         setMaintenanceRequests(dashboardData.maintenance_requests || []);
         
-        // Update tenant info in localStorage
         localStorage.setItem('tenantInfo', JSON.stringify(dashboardData.tenant));
         
-        // Show approval status message
+        if (dashboardData.balanceInfo) {
+          setBalanceInfo(dashboardData.balanceInfo);
+        }
+        
         if (!dashboardData.is_approved) {
           setMessage(dashboardData.message);
           setMessageType('warning');
+        } else {
+          setMessage('Welcome back! Your dashboard is up to date.');
+          setMessageType('success');
+          setTimeout(() => setMessage(null), 3000);
         }
       } else {
         const errorData = await dashboardResponse.json();
-        setMessage(errorData.error || 'Failed to load dashboard');
+        setMessage(errorData.error || 'Failed to load dashboard. Please try refreshing the page.');
         setMessageType('error');
       }
       
     } catch (error) {
       console.error('Error loading tenant data:', error);
-      setMessage('Network error. Please try again.');
+      setMessage('Unable to connect to the server. Please check your internet connection and try again.');
       setMessageType('error');
     } finally {
       setLoading(false);
@@ -248,50 +256,69 @@ const TenantDashboard = () => {
     setLoading(true);
     setMessage(null);
 
-    // Check if tenant is approved
     if (tenantInfo.status !== 'approved') {
       setMessage('Please wait for approval before submitting maintenance requests.');
+      setMessageType('warning');
+      setLoading(false);
+      return;
+    }
+
+    if (!maintenanceForm.issue.trim()) {
+      setMessage('Please describe the maintenance issue before submitting.');
+      setMessageType('error');
+      setLoading(false);
+      return;
+    }
+
+    if (maintenanceForm.issue.trim().length < 10) {
+      setMessage('Please provide more details about the maintenance issue (at least 10 characters).');
       setMessageType('error');
       setLoading(false);
       return;
     }
 
     try {
-      const response = await fetch('/api/maintenance-request', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tenant_id: tenantInfo.id,
-          tenant: tenantInfo.name,
-          house_number: tenantInfo.house_number,
-          issue: maintenanceForm.issue,
-          priority: maintenanceForm.priority
-        }),
+      await submitMaintenanceRequest({
+        tenant_id: tenantInfo.id,
+        tenant: tenantInfo.name,
+        house_number: tenantInfo.house_number,
+        issue: maintenanceForm.issue,
+        priority: maintenanceForm.priority
       });
 
-      if (response.ok) {
-        setMessage('Maintenance request submitted successfully!');
-        setMessageType('success');
-        setMaintenanceForm({
-          issue: '',
-          priority: 'Normal'
-        });
-        
-        // Refresh maintenance requests
+      setMessage('✅ Maintenance request submitted successfully! We\'ll get back to you soon.');
+      setMessageType('success');
+      setMaintenanceForm({
+        issue: '',
+        priority: 'Normal'
+      });
+      
+      try {
         const maintenanceResponse = await fetch(`/api/tenant-maintenance/${tenantInfo.id}`);
         if (maintenanceResponse.ok) {
           const maintenanceData = await maintenanceResponse.json();
           setMaintenanceRequests(maintenanceData || []);
         }
-      } else {
-        const errorData = await response.json();
-        setMessage(errorData.error || 'Failed to submit maintenance request. Please try again.');
-        setMessageType('error');
+      } catch (refreshError) {
+        console.error('Error refreshing maintenance requests:', refreshError);
       }
+
+      setTimeout(() => setMessage(null), 5000);
+      
     } catch (error) {
-      setMessage('Network error. Please try again.');
+      console.error('Maintenance request error:', error);
+      
+      let errorMessage = 'Failed to submit maintenance request. Please try again.';
+      
+      if (error.message.includes('Unable to connect')) {
+        errorMessage = 'Network connection issue. Please check your internet and try again.';
+      } else if (error.message.includes('permission')) {
+        errorMessage = 'You don\'t have permission to submit maintenance requests.';
+      } else if (error.message.includes('server')) {
+        errorMessage = 'Server is temporarily unavailable. Please try again in a few minutes.';
+      }
+      
+      setMessage(errorMessage);
       setMessageType('error');
     } finally {
       setLoading(false);
@@ -300,6 +327,30 @@ const TenantDashboard = () => {
 
   if (!tenantInfo) {
     return <div className="loading">Loading...</div>;
+  }
+
+  if (loading && !tenantInfo) {
+    return (
+      <div className="tenant-dashboard">
+        <div className="loading-container">
+          <div className="loading-skeleton">
+            <div className="skeleton-header">
+              <div className="skeleton-avatar"></div>
+              <div className="skeleton-info">
+                <div className="skeleton-line title"></div>
+                <div className="skeleton-line subtitle"></div>
+              </div>
+            </div>
+            <div className="skeleton-cards">
+              <div className="skeleton-card"></div>
+              <div className="skeleton-card"></div>
+              <div className="skeleton-card"></div>
+            </div>
+          </div>
+          <p className="loading-text">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -398,15 +449,11 @@ const TenantDashboard = () => {
               {balanceInfo && (
                 <>
                   <div className="status-item">
-                    <label>House Assignment:</label>
-                    <span>{balanceInfo.house_number} ({balanceInfo.house_type})</span>
+                    <label>House Type:</label>
+                    <span>{balanceInfo.house_type}</span>
                   </div>
                   <div className="status-item">
-                    <label>Move-in Date:</label>
-                    <span>{tenantInfo.move_in_date ? new Date(tenantInfo.move_in_date).toLocaleDateString() : 'Not set'}</span>
-                  </div>
-                  <div className="status-item">
-                    <label>House Price:</label>
+                    <label>Monthly Rent:</label>
                     <span className="house-price">KSH {balanceInfo.house_price.toLocaleString()}</span>
                   </div>
                   <div className="status-item">
@@ -687,16 +734,16 @@ const TenantDashboard = () => {
                 {payments.length === 0 ? (
                   <p>No payment records found.</p>
                 ) : (
-                  payments.map(payment => (
-                    <div key={payment[0]} className="history-item">
+                  payments.map((payment, index) => (
+                    <div key={index} className="history-item">
                       <div className="history-info">
-                        <strong>KSH {payment[1]?.toLocaleString() || '0'}</strong>
+                        <strong>KSH {payment.amount?.toLocaleString() || '0'}</strong>
                         <span className="history-date">
-                          {payment[2] ? new Date(payment[2]).toLocaleDateString() : 'Unknown date'}
+                          {payment.date || 'Unknown date'}
                         </span>
                       </div>
                       <span className="payment-method">
-                        {getPaymentMethodIcon(payment[3])} {payment[3] || 'Unknown'}
+                        {getPaymentMethodIcon(payment.method)} {payment.method || 'Unknown'}
                       </span>
                     </div>
                   ))
@@ -710,16 +757,16 @@ const TenantDashboard = () => {
                 {maintenanceRequests.length === 0 ? (
                   <p>No maintenance requests found.</p>
                 ) : (
-                  maintenanceRequests.map(request => (
-                    <div key={request[0]} className="history-item">
+                  maintenanceRequests.map((request, index) => (
+                    <div key={index} className="history-item">
                       <div className="history-info">
-                        <p>{request[3]}</p>
+                        <p>{request.issue || 'No description'}</p>
                         <span className="history-date">
-                          {request[5] ? new Date(request[5]).toLocaleDateString() : 'Unknown date'}
+                          {request.date ? new Date(request.date).toLocaleDateString() : 'Submitted recently'}
                         </span>
                       </div>
-                      <span className={`status-badge ${request[4]?.toLowerCase()}`}>
-                        {request[4] || 'Unknown'}
+                      <span className={`status-badge ${request.status?.toLowerCase()}`}>
+                        {request.status || 'Unknown'}
                       </span>
                     </div>
                   ))
