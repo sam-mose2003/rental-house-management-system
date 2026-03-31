@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { submitMaintenanceRequest } from '../utils/api';
+import { submitMaintenanceRequest, makeTenantPayment } from '../utils/api';
 import './TenantDashboard.css';
 import '../components/LoadingSkeleton.css';
 
@@ -92,7 +92,7 @@ const TenantDashboard = () => {
 
   const [paymentForm, setPaymentForm] = useState({
     amount: '',
-    payment_method: 'Cash',  // Default to Cash
+    payment_method: 'M-Pesa',
     payment_date: new Date().toISOString().split('T')[0]
   });
 
@@ -201,7 +201,6 @@ const TenantDashboard = () => {
     setLoading(true);
     setMessage(null);
 
-    // Check if tenant is approved
     if (tenantInfo.status !== 'approved') {
       setMessage('Please wait for approval before making payments.');
       setMessageType('error');
@@ -209,42 +208,59 @@ const TenantDashboard = () => {
       return;
     }
 
+    // Validate form
+    if (!paymentForm.amount || parseFloat(paymentForm.amount) <= 0) {
+      setMessage('Please enter a valid payment amount.');
+      setMessageType('error');
+      setLoading(false);
+      return;
+    }
+
+    if (!paymentForm.payment_method) {
+      setMessage('Please select a payment method.');
+      setMessageType('error');
+      setLoading(false);
+      return;
+    }
+
+    if (!paymentForm.payment_date) {
+      setMessage('Please select a payment date.');
+      setMessageType('error');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch('/api/tenant-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tenant_id: tenantInfo.id,
-          amount: paymentForm.amount,
-          payment_method: paymentForm.payment_method,
-          payment_date: paymentForm.payment_date
-        }),
+      await makeTenantPayment({
+        tenant_id: tenantInfo.id,
+        amount: parseFloat(paymentForm.amount),
+        payment_method: paymentForm.payment_method,
+        payment_date: paymentForm.payment_date
       });
 
-      if (response.ok) {
-        setMessage('Payment submitted successfully!');
-        setMessageType('success');
-        setPaymentForm({
-          amount: '',
-          payment_method: 'M-Pesa',  // Reset to M-Pesa
-          payment_date: new Date().toISOString().split('T')[0]
-        });
-        
-        // Refresh payments
+      setMessage('Payment submitted successfully!');
+      setMessageType('success');
+      setPaymentForm({
+        amount: '',
+        payment_method: 'M-Pesa',
+        payment_date: new Date().toISOString().split('T')[0]
+      });
+      
+      try {
         const paymentsResponse = await fetch(`/api/tenant-payments/${tenantInfo.id}`);
         if (paymentsResponse.ok) {
           const paymentsData = await paymentsResponse.json();
           setPayments(paymentsData || []);
         }
-      } else {
-        const errorData = await response.json();
-        setMessage(errorData.error || 'Failed to submit payment. Please try again.');
-        setMessageType('error');
+      } catch (refreshError) {
+        console.error('Error refreshing payments:', refreshError);
       }
+      
+      setTimeout(() => setMessage(null), 3000);
+      
     } catch (error) {
-      setMessage('Network error. Please try again.');
+      console.error('Payment submission error:', error);
+      setMessage(error.message || 'Failed to submit payment. Please try again.');
       setMessageType('error');
     } finally {
       setLoading(false);

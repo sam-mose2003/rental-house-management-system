@@ -1467,6 +1467,36 @@ def api_tenant_login():
         return jsonify({"error": "Login failed. Please try again."}), 500
 
 
+@app.route('/api/tenant-payments/<int:tenant_id>', methods=['GET'])
+def api_tenant_payments(tenant_id):
+    try:
+        cur = get_cursor()
+        cur.execute("""
+            SELECT amount, payment_date, payment_method
+            FROM payments 
+            WHERE tenant_id = %s 
+            ORDER BY payment_date DESC 
+            LIMIT 10
+        """, (tenant_id,))
+        payments = cur.fetchall()
+        cur.close()
+        
+        payment_list = [
+            {
+                "amount": float(p[0]), 
+                "date": p[1].strftime('%Y-%m-%d'), 
+                "method": p[2]
+            }
+            for p in payments
+        ]
+        
+        return jsonify(payment_list)
+        
+    except Exception as e:
+        print(f"Error fetching tenant payments: {e}")
+        return jsonify({"error": "Failed to fetch payments"}), 500
+
+
 @app.route('/api/tenant-dashboard', methods=['GET'])
 def api_tenant_dashboard():
     try:
@@ -1579,3 +1609,7 @@ def api_tenant_dashboard():
     except Exception as e:
         print(f"Dashboard error: {e}")
         return jsonify({"error": "Failed to load dashboard data"}), 500
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
