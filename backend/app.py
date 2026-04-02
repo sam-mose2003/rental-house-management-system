@@ -1,6 +1,5 @@
-import MySQLdb
+import pymysql
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
-from flask_mysqldb import MySQL
 import hashlib
 import time
 import os
@@ -10,18 +9,35 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from config import Config
-import pymysql
-pymysql.install_as_MySQLdb()
 
 app = Flask(__name__)
 app.secret_key = Config.SECRET_KEY
 
-app.config['MYSQL_HOST'] = Config.MYSQL_HOST
-app.config['MYSQL_USER'] = Config.MYSQL_USER
-app.config['MYSQL_PASSWORD'] = Config.MYSQL_PASSWORD
-app.config['MYSQL_DB'] = Config.MYSQL_DB
+# Database connection function
+def get_db_connection():
+    return pymysql.connect(
+        host=Config.MYSQL_HOST,
+        user=Config.MYSQL_USER,
+        password=Config.MYSQL_PASSWORD,
+        database=Config.MYSQL_DB,
+        cursorclass=pymysql.cursors.DictCursor
+    )
 
-mysql = MySQL(app)
+def get_cursor():
+    conn = get_db_connection()
+    return conn.cursor()
+
+def commit_and_close(cursor, connection=None):
+    if connection is None:
+        connection = cursor.connection
+    connection.commit()
+    cursor.close()
+
+def rollback_and_close(cursor, connection=None):
+    if connection is None:
+        connection = cursor.connection
+    connection.rollback()
+    cursor.close()
 
 # Allow all origins for development
 CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5176", "http://127.0.0.1:5176", "*"], supports_credentials=True)
