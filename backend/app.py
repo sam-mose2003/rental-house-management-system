@@ -1,5 +1,6 @@
-import psycopg2
+import MySQLdb
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
+from flask_mysqldb import MySQL
 import hashlib
 import time
 import os
@@ -8,46 +9,27 @@ from datetime import datetime
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from config import Config
 
 app = Flask(__name__)
-app.secret_key = Config.SECRET_KEY
+app.secret_key = 'rhms_secret_key'
 
-# PostgreSQL connection function
-def get_db_connection():
-    return psycopg2.connect(
-        host=Config.POSTGRES_HOST,
-        user=Config.POSTGRES_USER,
-        password=Config.POSTGRES_PASSWORD,
-        database=Config.POSTGRES_DB
-    )
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = ''
+app.config['MYSQL_DB'] = 'rhms'
 
-def get_cursor():
-    conn = get_db_connection()
-    return conn.cursor()
-
-def commit_and_close(cursor, connection=None):
-    if connection is None:
-        connection = cursor.connection
-    connection.commit()
-    cursor.close()
-
-def rollback_and_close(cursor, connection=None):
-    if connection is None:
-        connection = cursor.connection
-    connection.rollback()
-    cursor.close()
+mysql = MySQL(app)
 
 # Allow all origins for development
 CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5176", "http://127.0.0.1:5176", "*"], supports_credentials=True)
 
 # Email configuration
 EMAIL_CONFIG = {
-    'SMTP_SERVER': Config.SMTP_SERVER,
-    'SMTP_PORT': Config.SMTP_PORT,
-    'SENDER_EMAIL': Config.SENDER_EMAIL,
-    'SENDER_PASSWORD': Config.SENDER_PASSWORD,
-    'ENABLED': Config.EMAIL_ENABLED
+    'SMTP_SERVER': 'smtp.gmail.com',
+    'SMTP_PORT': 587,
+    'SENDER_EMAIL': 'mairuramoses57@gmail.com',
+    'SENDER_PASSWORD': 'xxxx-xxxx-xxxx-xxxx',  # Replace with your Gmail app password
+    'ENABLED': True
 }
 
 def send_approval_email(tenant_email, tenant_name, house_number):

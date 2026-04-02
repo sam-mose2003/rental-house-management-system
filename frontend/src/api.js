@@ -1,10 +1,7 @@
-// API configuration - works in both development and production
-const API_BASE_URL = import.meta.env.DEV 
-  ? 'http://localhost:5000'
-  : 'https://my-house-manager-ke.onrender.com';  // Your actual Render backend URL
+const API_BASE = 'http://127.0.0.1:5000';
 
 export async function fetchVacantHouses() {
-  const res = await fetch(`${API_BASE_URL}/api/houses?vacant=1`);
+  const res = await fetch(`${API_BASE}/api/houses?vacant=1`);
   if (!res.ok) {
     throw new Error('Failed to load houses');
   }
@@ -12,7 +9,7 @@ export async function fetchVacantHouses() {
 }
 
 export async function registerTenant(payload) {
-  const res = await fetch(`${API_BASE_URL}/api/tenants`, {
+  const res = await fetch(`${API_BASE}/api/tenants`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
