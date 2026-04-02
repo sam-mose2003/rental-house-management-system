@@ -360,6 +360,242 @@ function HouseManagement() {
   );
 }
 
+function TenantManagement() {
+  const navigate = useNavigate();
+  const [tenants, setTenants] = useState([]);
+  const [pendingTenants, setPendingTenants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [message, setMessage] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchTenants();
+  }, []);
+
+  const fetchTenants = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/tenants');
+      if (response.ok) {
+        const data = await response.json();
+        setTenants(data);
+        setPendingTenants(data.filter(t => t.status === 'pending'));
+      } else {
+        setError('Failed to fetch tenants');
+      }
+    } catch (error) {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async (tenantId) => {
+    if (!confirm('Are you sure you want to approve this tenant?')) return;
+
+    setSubmitting(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/approve-tenant/${tenantId}`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        let approvalMessage = data.tenant_message || 'Tenant approved successfully!';
+        if (data.email_sent) {
+          approvalMessage += ' 📧 Approval email sent to tenant.';
+        } else {
+          approvalMessage += ' ⚠️ Email notification failed, but tenant was approved.';
+        }
+        setMessage(approvalMessage);
+        fetchTenants(); // Refresh the list
+      } else {
+        setError(data.error || 'Failed to approve tenant');
+      }
+    } catch (error) {
+      setError('Network error. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleReject = async (tenantId) => {
+    if (!confirm('Are you sure you want to reject this tenant? This action cannot be undone.')) return;
+
+    setSubmitting(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/reject-tenant/${tenantId}`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage('Tenant rejected successfully!');
+        fetchTenants(); // Refresh the list
+      } else {
+        setError(data.error || 'Failed to reject tenant');
+      }
+    } catch (error) {
+      setError('Network error. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleLogout = () => {
+    navigate('/');
+  };
+
+  if (loading) {
+    return (
+      <div className="app">
+        <div className="loading">Loading tenants...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="app">
+      <div className="dashboard-container">
+        <div className="dashboard-header">
+          <div className="header-content">
+            <div className="welcome-section">
+              <h1>Manage Tenants</h1>
+              <p className="subtitle">Approve or reject tenant applications</p>
+            </div>
+            <button onClick={handleLogout} className="logout-btn">
+              Logout
+            </button>
+          </div>
+        </div>
+
+        <div className="dashboard-content">
+          {message && (
+            <div className="message success">
+              {message}
+            </div>
+          )}
+
+          {error && (
+            <div className="message error">
+              {error}
+            </div>
+          )}
+
+          <div className="info-card">
+            <h3>Pending Approvals ({pendingTenants.length})</h3>
+            {pendingTenants.length > 0 ? (
+              <div className="tenant-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>House</th>
+                      <th>Move-in Date</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingTenants.map((tenant) => (
+                      <tr key={tenant.id}>
+                        <td>{tenant.name}</td>
+                        <td>{tenant.email}</td>
+                        <td>{tenant.phone}</td>
+                        <td>{tenant.house_number}</td>
+                        <td>{new Date(tenant.move_in_date).toLocaleDateString()}</td>
+                        <td>
+                          <div className="action-buttons-inline">
+                            <button
+                              onClick={() => handleApprove(tenant.id)}
+                              className="approve-btn"
+                              disabled={submitting}
+                            >
+                              ✅ Approve
+                            </button>
+                            <button
+                              onClick={() => handleReject(tenant.id)}
+                              className="reject-btn"
+                              disabled={submitting}
+                            >
+                              ❌ Reject
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">👥</div>
+                <p>No pending tenant applications.</p>
+                <p className="empty-subtitle">All caught up! Check back later for new applications.</p>
+              </div>
+            )}
+          </div>
+
+          <div className="info-card">
+            <h3>All Tenants ({tenants.length})</h3>
+            {tenants.length > 0 ? (
+              <div className="tenant-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>House</th>
+                      <th>Status</th>
+                      <th>Move-in Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tenants.map((tenant) => (
+                      <tr key={tenant.id}>
+                        <td>{tenant.name}</td>
+                        <td>{tenant.email}</td>
+                        <td>{tenant.house_number}</td>
+                        <td>
+                          <span className={`status-badge ${tenant.status.toLowerCase()}`}>
+                            {tenant.status}
+                          </span>
+                        </td>
+                        <td>{new Date(tenant.move_in_date).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">👥</div>
+                <p>No tenants found.</p>
+                <p className="empty-subtitle">Tenants will appear here when they register.</p>
+              </div>
+            )}
+          </div>
+
+          <div className="action-buttons">
+            <button onClick={() => navigate('/dashboard')} className="action-btn">
+              📊 Back to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AdminLogin() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
@@ -460,6 +696,7 @@ function AppRouter() {
           <Route path="/" element={<AdminLogin />} />
           <Route path="/dashboard" element={<AdminDashboard />} />
           <Route path="/houses" element={<HouseManagement />} />
+          <Route path="/tenants" element={<TenantManagement />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

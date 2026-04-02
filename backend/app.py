@@ -6,6 +6,9 @@ import time
 import os
 from flask_cors import CORS
 from datetime import datetime
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 app.secret_key = 'rhms_secret_key'
@@ -19,6 +22,70 @@ mysql = MySQL(app)
 
 # Allow all origins for development
 CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5176", "http://127.0.0.1:5176", "*"], supports_credentials=True)
+
+# Email configuration
+EMAIL_CONFIG = {
+    'SMTP_SERVER': 'smtp.gmail.com',  # Use Gmail SMTP
+    'SMTP_PORT': 587,
+    'SENDER_EMAIL': 'mairuramoses57@gmail.com',  # Your Gmail
+    'SENDER_PASSWORD': 'xxxx-xxxx-xxxx-xxxx',  # Replace with your 16-char app password
+    'ENABLED': True  # Set to False to disable emails
+}
+
+def send_approval_email(tenant_email, tenant_name, house_number):
+    """Send approval email to tenant"""
+    if not EMAIL_CONFIG['ENABLED']:
+        print("Email sending is disabled")
+        return False
+    
+    try:
+        # Create email message
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_CONFIG['SENDER_EMAIL']
+        msg['To'] = tenant_email
+        msg['Subject'] = '🎉 Your House Application Has Been Approved!'
+        
+        # Email body
+        body = f"""
+Dear {tenant_name},
+
+🎉 GOOD NEWS! Your rental application has been APPROVED! 🎉
+
+House Details:
+- House Number: {house_number}
+- Status: Approved
+- You can now access your tenant dashboard
+
+Next Steps:
+1. Log into your tenant dashboard
+2. Make your first payment
+3. Submit any maintenance requests if needed
+
+Thank you for choosing our rental service!
+We're excited to have you as our tenant.
+
+Best regards,
+RHMS Management Team
+---
+Rental House Management System
+Contact: support@rhms.com
+        """
+        
+        msg.attach(MIMEText(body, 'plain'))
+        
+        # Send email
+        server = smtplib.SMTP(EMAIL_CONFIG['SMTP_SERVER'], EMAIL_CONFIG['SMTP_PORT'])
+        server.starttls()
+        server.login(EMAIL_CONFIG['SENDER_EMAIL'], EMAIL_CONFIG['SENDER_PASSWORD'])
+        server.send_message(msg)
+        server.quit()
+        
+        print(f"Approval email sent to {tenant_email}")
+        return True
+        
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+        return False
 
 def get_cursor():
     return mysql.connection.cursor()
@@ -990,22 +1057,76 @@ def api_get_pending_tenants():
         return jsonify({"error": "Could not fetch pending tenants"}), 500
 
 
+@app.route('/api/test-email', methods=['POST'])
+def test_email():
+    """Test email sending functionality"""
+    try:
+        data = request.get_json()
+        test_email = data.get('email', 'mairuramoses57@gmail.com')
+        
+        success = send_approval_email(test_email, "Test Tenant", "A101")
+        
+        if success:
+            return jsonify({
+                "success": True, 
+                "message": f"Test email sent to {test_email}"
+            })
+        else:
+            return jsonify({
+                "success": False, 
+                "message": "Failed to send test email"
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            "success": False, 
+            "error": str(e)
+        }), 500
+
+
 @app.route('/api/approve-tenant/<int:tenant_id>', methods=['POST'])
 def api_approve_tenant(tenant_id):
     """Approve a tenant registration"""
     try:
         cur = get_cursor()
+        
+        # Get tenant details before updating
+        cur.execute("SELECT name, email, house_number FROM tenants WHERE id = %s", (tenant_id,))
+        tenant = cur.fetchone()
+        
+        if not tenant:
+            return jsonify({"error": "Tenant not found"}), 404
+        
+        tenant_name, tenant_email, house_number = tenant
+        
+        # Update tenant status to approved
         cur.execute("UPDATE tenants SET status = 'approved' WHERE id = %s", (tenant_id,))
         mysql.connection.commit()
         
         # Update house status to occupied
-        cur.execute("UPDATE houses SET status = 'Occupied' WHERE house_number = (SELECT house_number FROM tenants WHERE id = %s)", (tenant_id,))
+        cur.execute("UPDATE houses SET status = 'Occupied' WHERE house_number = %s", (house_number,))
         mysql.connection.commit()
         
+        # Send approval email
+        email_sent = send_approval_email(tenant_email, tenant_name, house_number)
+        
+        # Create success message
+        success_message = f"🎉 Congratulations {tenant_name}! Your selected house {house_number} has been approved successfully. You can now access your dashboard. Thank you for your patience!"
+        
         cur.close()
-        return jsonify({"success": True, "message": "Tenant approved successfully"})
+        return jsonify({
+            "success": True, 
+            "message": "Tenant approved successfully",
+            "tenant_message": success_message,
+            "email_sent": email_sent,
+            "tenant": {
+                "name": tenant_name,
+                "email": tenant_email,
+                "house_number": house_number
+            }
+        })
     except Exception as e:
-        return jsonify({"error": "Could not approve tenant"}), 500
+        return jsonify({"error": f"Could not approve tenant: {str(e)}"}), 500
 
 
 @app.route('/api/reject-tenant/<int:tenant_id>', methods=['POST'])

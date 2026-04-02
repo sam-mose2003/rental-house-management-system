@@ -65,9 +65,27 @@ const TenantDashboard = () => {
           setMessage(dashboardData.message);
           setMessageType('warning');
         } else {
-          setMessage('Welcome back! Your dashboard is up to date.');
-          setMessageType('success');
-          setTimeout(() => setMessage(null), 3000);
+          // Check if this is the first time logging in after approval
+          const lastApprovalCheck = localStorage.getItem('lastApprovalCheck');
+          const currentTenantStatus = dashboardData.tenant.status;
+          
+          if (!lastApprovalCheck && currentTenantStatus === 'approved') {
+            // Show approval success message
+            const tenantName = dashboardData.tenant.name;
+            const houseNumber = dashboardData.tenant.house_number;
+            const approvalMessage = `🎉 Congratulations ${tenantName}! Your selected house ${houseNumber} has been approved successfully. You can now access your dashboard. Thank you for your patience!`;
+            
+            setMessage(approvalMessage);
+            setMessageType('success');
+            
+            // Mark that we've shown the approval message
+            localStorage.setItem('lastApprovalCheck', 'true');
+            localStorage.setItem('approvalMessageShown', 'true');
+          } else {
+            setMessage('Welcome back! Your dashboard is up to date.');
+            setMessageType('success');
+            setTimeout(() => setMessage(null), 3000);
+          }
         }
       } else {
         const errorData = await dashboardResponse.json();
@@ -87,6 +105,8 @@ const TenantDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem('tenantInfo');
     localStorage.removeItem('tenantToken');
+    localStorage.removeItem('lastApprovalCheck');
+    localStorage.removeItem('approvalMessageShown');
     navigate('/login');
   };
 
@@ -139,12 +159,14 @@ const TenantDashboard = () => {
     if (!validateNationalId(profileForm.national_id)) {
       setMessage('National ID must be between 8 and 13 digits.');
       setMessageType('error');
+      setLoading(false);
       return;
     }
 
     if (!validatePhoneNumber(profileForm.phone)) {
       setMessage('Phone number must not exceed 10 digits.');
       setMessageType('error');
+      setLoading(false);
       return;
     }
 
