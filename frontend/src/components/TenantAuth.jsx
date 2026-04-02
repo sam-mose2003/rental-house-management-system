@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config/api.js';
 import './TenantAuth.css';
 
 const TenantAuth = () => {
@@ -34,7 +35,7 @@ const TenantAuth = () => {
 
   const loadHouses = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/houses');
+      const response = await fetch(`${API_BASE_URL}/api/houses`);
       if (!response.ok) throw new Error('Failed to load houses');
       const data = await response.json();
       // Filter out occupied houses - only show vacant ones
@@ -109,7 +110,7 @@ const TenantAuth = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/tenants', {
+      const response = await fetch(`${API_BASE_URL}/api/tenants`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -152,7 +153,7 @@ const TenantAuth = () => {
     setMessage(null);
 
     try {
-      const response = await fetch('http://localhost:5000/api/tenant-login', {
+      const response = await fetch(`${API_BASE_URL}/api/tenant-login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

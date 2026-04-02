@@ -1,7 +1,7 @@
 // API configuration - works in both development and production
 const API_BASE_URL = import.meta.env.DEV 
   ? 'http://localhost:5000'
-  : 'https://your-render-backend-url.onrender.com';  // Replace with your actual Render URL
+  : 'https://my-house-manager-ke.onrender.com';  // Your actual Render backend URL
 
 export async function fetchVacantHouses() {
   const res = await fetch(`${API_BASE_URL}/api/houses?vacant=1`);

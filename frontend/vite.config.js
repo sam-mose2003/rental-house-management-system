@@ -23,7 +23,12 @@ export default defineConfig(({ mode }) => {
       sourcemap: true
     },
     define: {
-      __APP_ENV__: JSON.stringify(isProduction ? 'production' : 'development')
+      __APP_ENV__: JSON.stringify(isProduction ? 'production' : 'development'),
+      __API_BASE_URL__: JSON.stringify(
+        isProduction 
+          ? 'https://your-render-backend-url.onrender.com'  // Replace with your actual Render URL
+          : 'http://localhost:5000'
+      )
     }
   }
 })

@@ -1,4 +1,4 @@
-# Production Configuration for Render
+# Production Configuration for Render with PostgreSQL
 import os
 from dotenv import load_dotenv
 
@@ -6,10 +6,12 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'rhms_secret_key')
-    MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
-    MYSQL_USER = os.environ.get('MYSQL_USER', 'root')
-    MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
-    MYSQL_DB = os.environ.get('MYSQL_DB', 'rhms')
+    
+    # PostgreSQL Configuration
+    POSTGRES_HOST = os.environ.get('POSTGRES_HOST', 'localhost')
+    POSTGRES_USER = os.environ.get('POSTGRES_USER', 'postgres')
+    POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', '')
+    POSTGRES_DB = os.environ.get('POSTGRES_DB', 'rhms')
     
     # Email Configuration
     SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')

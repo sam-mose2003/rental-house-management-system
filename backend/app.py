@@ -1,4 +1,4 @@
-import pymysql
+import psycopg2
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 import hashlib
 import time
@@ -13,14 +13,13 @@ from config import Config
 app = Flask(__name__)
 app.secret_key = Config.SECRET_KEY
 
-# Database connection function
+# PostgreSQL connection function
 def get_db_connection():
-    return pymysql.connect(
-        host=Config.MYSQL_HOST,
-        user=Config.MYSQL_USER,
-        password=Config.MYSQL_PASSWORD,
-        database=Config.MYSQL_DB,
-        cursorclass=pymysql.cursors.DictCursor
+    return psycopg2.connect(
+        host=Config.POSTGRES_HOST,
+        user=Config.POSTGRES_USER,
+        password=Config.POSTGRES_PASSWORD,
+        database=Config.POSTGRES_DB
     )
 
 def get_cursor():
