@@ -9,14 +9,15 @@ from datetime import datetime
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from config import Config
 
 app = Flask(__name__)
-app.secret_key = 'rhms_secret_key'
+app.secret_key = Config.SECRET_KEY
 
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = ''
-app.config['MYSQL_DB'] = 'rhms'
+app.config['MYSQL_HOST'] = Config.MYSQL_HOST
+app.config['MYSQL_USER'] = Config.MYSQL_USER
+app.config['MYSQL_PASSWORD'] = Config.MYSQL_PASSWORD
+app.config['MYSQL_DB'] = Config.MYSQL_DB
 
 mysql = MySQL(app)
 
@@ -25,11 +26,11 @@ CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://loc
 
 # Email configuration
 EMAIL_CONFIG = {
-    'SMTP_SERVER': 'smtp.gmail.com',  # Use Gmail SMTP
-    'SMTP_PORT': 587,
-    'SENDER_EMAIL': 'mairuramoses57@gmail.com',  # Your Gmail
-    'SENDER_PASSWORD': 'xxxx-xxxx-xxxx-xxxx',  # Replace with your 16-char app password
-    'ENABLED': True  # Set to False to disable emails
+    'SMTP_SERVER': Config.SMTP_SERVER,
+    'SMTP_PORT': Config.SMTP_PORT,
+    'SENDER_EMAIL': Config.SENDER_EMAIL,
+    'SENDER_PASSWORD': Config.SENDER_PASSWORD,
+    'ENABLED': Config.EMAIL_ENABLED
 }
 
 def send_approval_email(tenant_email, tenant_name, house_number):
