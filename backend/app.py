@@ -497,20 +497,20 @@ def add_payment():
         return redirect(url_for('home'))
     try:
         cur = get_cursor()
-        # Test database connection first
-        cur.execute("SELECT COUNT(*) FROM tenants")
-        count = cur.fetchone()[0]
-        
-        query = "SELECT id, name, house_number FROM tenants ORDER BY name"
+        # Query only approved tenants
+        query = "SELECT id, name, house_number FROM tenants WHERE status='approved' ORDER BY id ASC"
         cur.execute(query)
         tenants_list = cur.fetchall()
+        print(f"Tenants found: {len(tenants_list)}")
         cur.close()
     except MySQLdb.ProgrammingError as e:
         print(f"Database error: {e}")
         tenants_list = []
+        flash("Database error loading tenants.", "error")
     except Exception as e:
         print(f"General error: {e}")
         tenants_list = []
+        flash("Error loading tenants.", "error")
     
     if request.method == 'POST':
         tenant_id = request.form.get('tenant_id')

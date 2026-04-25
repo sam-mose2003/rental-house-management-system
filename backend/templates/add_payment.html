@@ -22,13 +22,26 @@
 
 <div class="main">
   <h2>Record Rent Payment</h2>
+  
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  
+  {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+  {% endif %}
+  
   <form method="POST" action="{{ url_for('add_payment') }}">
 
 <label>Tenant</label>
 <select name="tenant_id" required>
-  <option value="">Select Tenant</option>
+  <option value="">{% if tenants %}Select Tenant{% else %}No approved tenants available{% endif %}</option>
   {% for tenant in tenants or [] %}
-  <option value="{{ tenant[0] }}">{{ tenant[1] }}</option>
+  <option value="{{ tenant[0] }}">{{ tenant[1] }} - House {{ tenant[2] }}</option>
   {% endfor %}
 </select>
 
