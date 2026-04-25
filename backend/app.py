@@ -953,7 +953,7 @@ def api_tenants():
                 SELECT id, name, national_id, phone, email, house_number, move_in_date, status
                 FROM tenants 
                 WHERE status != 'pending' OR status IS NULL
-                ORDER BY id DESC
+                ORDER BY id ASC
             """)
             tenants = []
             for row in cur.fetchall():

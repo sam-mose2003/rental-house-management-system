@@ -378,6 +378,7 @@ function TenantManagement() {
       const response = await fetch('http://localhost:5000/api/tenants');
       if (response.ok) {
         const data = await response.json();
+        data.sort((a, b) => a.id - b.id);
         setTenants(data);
         setPendingTenants(data.filter(t => t.status === 'pending'));
       } else {
